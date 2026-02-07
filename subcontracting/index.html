@@ -281,6 +281,32 @@
                                 <input v-model="newOrder.dueDate" type="date"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
                             </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">เลข BPR</label>
+                                    <input v-model="newOrder.bpr" type="text"
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                                        placeholder="เลข BPR">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Lot.</label>
+                                    <input v-model="newOrder.lot" type="text"
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                                        placeholder="เลขล็อต">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">MFD.</label>
+                                    <input v-model="newOrder.mfd" type="date"
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">EXP.</label>
+                                    <input v-model="newOrder.exp" type="date"
+                                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+                                </div>
+                            </div>
                         </div>
                         <!-- Calculated Materials -->
                         <div
@@ -340,7 +366,11 @@
                             <tbody>
                                 <tr v-for="order in orders.filter(o => o.status !== 'completed').slice(0,5)"
                                     :key="order.id" class="border-b hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-indigo-600">{{ order.orderNo }}</td>
+                                    <td class="px-4 py-3">
+                                        <span class="font-medium text-indigo-600">{{ order.orderNo }}</span>
+                                        <p v-if="order.bpr" class="text-xs text-purple-500">BPR: {{ order.bpr }}</p>
+                                        <p v-if="order.lot" class="text-xs text-teal-600">Lot: {{ order.lot }}</p>
+                                    </td>
                                     <td class="px-4 py-3 text-xs text-gray-500">{{ formatDate(order.createdAt) }}</td>
                                     <td class="px-4 py-3">
                                         <div v-if="order.shipments && order.shipments.length" class="space-y-0.5">
@@ -449,6 +479,13 @@
                                     <td class="px-4 py-4">
                                         <span class="font-bold text-indigo-600">{{ order.orderNo }}</span>
                                         <p class="text-xs text-gray-500">{{ order.subcontractor }}</p>
+                                        <p v-if="order.bpr" class="text-xs text-purple-500">BPR: {{ order.bpr }}</p>
+                                        <p v-if="order.lot" class="text-xs text-teal-600">Lot: {{ order.lot }}</p>
+                                        <p v-if="order.mfd || order.exp" class="text-xs text-gray-400">
+                                            <span v-if="order.mfd">MFD: {{ formatDate(order.mfd) }}</span>
+                                            <span v-if="order.mfd && order.exp"> | </span>
+                                            <span v-if="order.exp">EXP: {{ formatDate(order.exp) }}</span>
+                                        </p>
                                     </td>
                                     <td class="px-4 py-4 font-medium">
                                         {{ order.productName }}
@@ -843,7 +880,7 @@
                 const selectedProductForBom = ref('')
                 const newMaterial = ref({ name: '', qty: 0, unit: '' })
                 const bomMaterials = ref([{ name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }])
-                const newOrder = ref({ productId: '', qty: 0, subcontractor: '', dueDate: '' })
+                const newOrder = ref({ productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' })
                 const calculatedMaterials = ref([])
                 const newShipment = ref({ qty: 0, date: new Date().toISOString().split('T')[0] })
                 const receiveQty = ref(0)
@@ -1022,8 +1059,8 @@
                 const createJobOrder = () => {
                     if (!newOrder.value.productId || !newOrder.value.qty) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
                     const product = products.value.find(p => p.id === newOrder.value.productId)
-                    const order = { id: Date.now().toString(), orderNo: generateOrderNo(), productId: newOrder.value.productId, productName: product.name, productUnit: product.unit, qty: newOrder.value.qty, subcontractor: newOrder.value.subcontractor, dueDate: newOrder.value.dueDate, status: 'pending', receivedQty: 0, outstandingQty: newOrder.value.qty, materials: JSON.parse(JSON.stringify(calculatedMaterials.value)), shipments: [], createdAt: new Date().toISOString() }
-                    orders.value.unshift(order); saveStorage(); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
+                    const order = { id: Date.now().toString(), orderNo: generateOrderNo(), productId: newOrder.value.productId, productName: product.name, productUnit: product.unit, qty: newOrder.value.qty, subcontractor: newOrder.value.subcontractor, dueDate: newOrder.value.dueDate, bpr: newOrder.value.bpr || '', lot: newOrder.value.lot || '', mfd: newOrder.value.mfd || '', exp: newOrder.value.exp || '', status: 'pending', receivedQty: 0, outstandingQty: newOrder.value.qty, materials: JSON.parse(JSON.stringify(calculatedMaterials.value)), shipments: [], createdAt: new Date().toISOString() }
+                    orders.value.unshift(order); saveStorage(); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
                 }
 
                 const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
@@ -1193,6 +1230,10 @@
                         <div class="info-item"><span class="info-label">ผู้รับจ้าง:</span><span class="info-value">${order.subcontractor || '-'}</span></div>
                         <div class="info-item"><span class="info-label">ยอดสั่งผลิต:</span><span class="info-value">${(order.qty || 0).toLocaleString()} ${order.productUnit || ''}</span></div>
                         <div class="info-item"><span class="info-label">รอบที่:</span><span class="info-value">${roundNo} / ${order.shipments.length}</span></div>
+                        ${order.bpr ? '<div class="info-item"><span class="info-label">เลข BPR:</span><span class="info-value" style="color:#7c3aed;">' + order.bpr + '</span></div>' : ''}
+                        ${order.lot ? '<div class="info-item"><span class="info-label">Lot:</span><span class="info-value" style="color:#0d9488;">' + order.lot + '</span></div>' : ''}
+                        ${order.mfd ? '<div class="info-item"><span class="info-label">MFD:</span><span class="info-value">' + formatDate(order.mfd) + '</span></div>' : ''}
+                        ${order.exp ? '<div class="info-item"><span class="info-label">EXP:</span><span class="info-value">' + formatDate(order.exp) + '</span></div>' : ''}
                     </div>
                     <h3 style="font-size:14px;">📦 รายการวัตถุดิบที่ส่ง - รอบที่ ${roundNo}</h3>
                     ${matsHTML}

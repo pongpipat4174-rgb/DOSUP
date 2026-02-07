@@ -53,7 +53,7 @@ function syncOrders(ss, orders) {
 
   // Always clear entire sheet and rewrite header
   sheet.clear()
-  const headers = ['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'createdAt', 'updatedAt']
+  const headers = ['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'bpr', 'lot', 'mfd', 'exp', 'createdAt', 'updatedAt']
   sheet.appendRow(headers)
 
   // Write all orders
@@ -72,6 +72,10 @@ function syncOrders(ss, orders) {
       order.outstandingQty || 0,
       JSON.stringify(order.materials || []),
       JSON.stringify(order.shipments || []),
+      order.bpr || '',
+      order.lot || '',
+      order.mfd || '',
+      order.exp || '',
       order.createdAt || new Date().toISOString(),
       new Date().toISOString()
     ])
