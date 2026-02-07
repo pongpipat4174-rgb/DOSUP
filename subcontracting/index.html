@@ -966,11 +966,11 @@
                             fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json()),
                             fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
                         ])
-                        if (ordersRes.success && ordersRes.orders.length > 0) {
-                            orders.value = ordersRes.orders
+                        if (ordersRes.success) {
+                            orders.value = ordersRes.orders || []
                         }
-                        if (productsRes.success && productsRes.products.length > 0) {
-                            products.value = productsRes.products
+                        if (productsRes.success) {
+                            products.value = productsRes.products || []
                         }
                         localStorage.setItem('sub_products', JSON.stringify(products.value))
                         localStorage.setItem('sub_orders', JSON.stringify(orders.value))
