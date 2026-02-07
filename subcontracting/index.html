@@ -827,7 +827,7 @@
                 const showToast = (msg, type = 'success') => { toast.value = { show: true, message: msg, type }; setTimeout(() => toast.value.show = false, 3000) }
 
                 // === Google Apps Script URL (ต้อง Deploy แล้ววาง URL ตรงนี้) ===
-                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9OToWNr3B9iOBLDRjnMw6_O7rt8fmvdb_i24iwLVHzq8Odg9k0bC1GTG6uxTFNzJDcw/exec'
+                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3LhMJ0p3KhgG_jVAGLsZhO5D5cjpllyFrbMQhR5QQyLltP9HA4z--dqmlYwp1qDMR3Q/exec'
 
                 const saveStorage = () => {
                     localStorage.setItem('sub_products', JSON.stringify(products.value))
@@ -1200,278 +1200,278 @@
 
                 // === ดึงยอดรับเข้าจาก Sheet (match เลข JO ในหมายเหตุเท่านั้น) ===
                 const getReceivedFromSheet = (orderNo) => {
-                if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return 0
-                let totalPieces = 0
-                rawSheetRows.value.forEach(row => {
-                const remark = String(row['หมายเหตุ'] || '')
-                if (remark.includes(orderNo)) {
-                const boxes = parseInt(row['ผลรวม(ลัง)']) || 0
-                const fractions = parseInt(row['ผลรวม(เศษ)']) || 0
-                const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
-                const piecesPerBox = piecesPerBoxMap.value[sheetProduct] || 0
-                totalPieces += (boxes * piecesPerBox) + fractions
-                }
-                })
-                return totalPieces
+                    if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return 0
+                    let totalPieces = 0
+                    rawSheetRows.value.forEach(row => {
+                        const remark = String(row['หมายเหตุ'] || '')
+                        if (remark.includes(orderNo)) {
+                            const boxes = parseInt(row['ผลรวม(ลัง)']) || 0
+                            const fractions = parseInt(row['ผลรวม(เศษ)']) || 0
+                            const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
+                            const piecesPerBox = piecesPerBoxMap.value[sheetProduct] || 0
+                            totalPieces += (boxes * piecesPerBox) + fractions
+                        }
+                    })
+                    return totalPieces
                 }
 
                 // === เตือนถ้าเลข JO ตรง แต่ชื่อสินค้าไม่ตรง ===
                 const getMismatchWarnings = (orderNo, expectedProduct) => {
-                if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return []
-                const warnings = []
-                rawSheetRows.value.forEach((row, idx) => {
-                const remark = String(row['หมายเหตุ'] || '')
-                if (remark.includes(orderNo)) {
-                const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
-                if (sheetProduct && !sheetProduct.includes(expectedProduct) && !expectedProduct.includes(sheetProduct)) {
-                warnings.push({ rowNum: idx + 2, sheetProduct, remark })
-                }
-                }
-                })
-                return warnings
+                    if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return []
+                    const warnings = []
+                    rawSheetRows.value.forEach((row, idx) => {
+                        const remark = String(row['หมายเหตุ'] || '')
+                        if (remark.includes(orderNo)) {
+                            const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
+                            if (sheetProduct && !sheetProduct.includes(expectedProduct) && !expectedProduct.includes(sheetProduct)) {
+                                warnings.push({ rowNum: idx + 2, sheetProduct, remark })
+                            }
+                        }
+                    })
+                    return warnings
                 }
 
                 const detectVendor = (remark) => {
-                if (!remark) return null
-                const lower = remark.toLowerCase()
-                if (lower.includes('จูน') || lower.includes('jun')) return 'จูน'
-                if (lower.includes('cmi') || lower.includes('ซีเอ็มไอ')) return 'CMI'
-                if (lower.includes('บางปู') || lower.includes('bangpu')) return 'บางปู'
-                return null
+                    if (!remark) return null
+                    const lower = remark.toLowerCase()
+                    if (lower.includes('จูน') || lower.includes('jun')) return 'จูน'
+                    if (lower.includes('cmi') || lower.includes('ซีเอ็มไอ')) return 'CMI'
+                    if (lower.includes('บางปู') || lower.includes('bangpu')) return 'บางปู'
+                    return null
                 }
 
                 const fetchSheetData = async () => {
-                sheetLoading.value = true
-                try {
-                const callbackName = 'googleSheetCallback_' + Date.now()
-                const url =
-                `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
+                    sheetLoading.value = true
+                    try {
+                        const callbackName = 'googleSheetCallback_' + Date.now()
+                        const url =
+                            `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
 
-                const dataPromise = new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => { reject(new Error('Request timeout')) }, 15000)
-                window[callbackName] = (response) => { clearTimeout(timeout); delete window[callbackName]; resolve(response) }
-                })
+                        const dataPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => { reject(new Error('Request timeout')) }, 15000)
+                            window[callbackName] = (response) => { clearTimeout(timeout); delete window[callbackName]; resolve(response) }
+                        })
 
-                const script = document.createElement('script')
-                script.src = url
-                script.onerror = () => { sheetLoading.value = false; showToast('ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้', 'error') }
-                document.body.appendChild(script)
+                        const script = document.createElement('script')
+                        script.src = url
+                        script.onerror = () => { sheetLoading.value = false; showToast('ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้', 'error') }
+                        document.body.appendChild(script)
 
-                const response = await dataPromise
-                document.body.removeChild(script)
+                        const response = await dataPromise
+                        document.body.removeChild(script)
 
-                if (response && response.table) {
-                const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
+                        if (response && response.table) {
+                            const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
 
 
 
-                const rows = response.table.rows.map(row => {
-                const obj = {}
-                row.c.forEach((cell, idx) => {
-                    const key = headers[idx]
-                    obj[key] = cell ? (cell.f || cell.v || '') : ''
-                    // Store raw/formatted based on detected column
-                    // FORCE: Always use first column (index 0) for Date
-                    if (idx === 0) {
-                        obj['_dateRaw'] = cell ? cell.v : null
-                        obj['_dateFormatted'] = cell ? (cell.f || cell.v) : null
+                            const rows = response.table.rows.map(row => {
+                                const obj = {}
+                                row.c.forEach((cell, idx) => {
+                                    const key = headers[idx]
+                                    obj[key] = cell ? (cell.f || cell.v || '') : ''
+                                    // Store raw/formatted based on detected column
+                                    // FORCE: Always use first column (index 0) for Date
+                                    if (idx === 0) {
+                                        obj['_dateRaw'] = cell ? cell.v : null
+                                        obj['_dateFormatted'] = cell ? (cell.f || cell.v) : null
+                                    }
+                                })
+                                return obj
+                            })
+
+                            // Store raw rows
+                            rawSheetRows.value = rows
+                            processDataWithFilter() // Initial process
+
+                            sheetLastUpdated.value = new Date().toLocaleString('th-TH')
+
+                            showToast('โหลดสำเร็จ! ' + rows.length + ' แถว', 'success')
+                        } else {
+                            showToast('ข้อมูลไม่ถูกต้อง', 'error')
+                        }
+                    } catch (error) {
+                        console.error('Sheet fetch error:', error)
+                        showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้: ' + error.message, 'error')
                     }
-                })
-                return obj
-                })
-
-                // Store raw rows
-                rawSheetRows.value = rows
-                processDataWithFilter() // Initial process
-
-                sheetLastUpdated.value = new Date().toLocaleString('th-TH')
-
-                showToast('โหลดสำเร็จ! ' + rows.length + ' แถว', 'success')
-                } else {
-                showToast('ข้อมูลไม่ถูกต้อง', 'error')
-                }
-                } catch (error) {
-                console.error('Sheet fetch error:', error)
-                showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้: ' + error.message, 'error')
-                }
-                sheetLoading.value = false
+                    sheetLoading.value = false
                 }
 
                 const processDataWithFilter = () => {
-                const summary = {}
-                // Parse dd/mm/yyyy format
-                const parseDMY = (s) => {
-                if (!s) return null; const p = s.split('/'); if (p.length !== 3) return null; return new
-                    Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]))
-                }
-                const startDate = parseDMY(dateFrom.value)
-                const endDate = (() => { const d = parseDMY(dateTo.value); if (d) d.setHours(23, 59, 59); return d })()
-
-                let debugShown = false
-                let totalRows = 0
-                let matchedRows = 0
-                let invalidDateRows = 0
-
-                rawSheetRows.value.forEach(row => {
-                totalRows++
-                let rowDate = null
-                const rawVal = row._dateRaw
-                const fmtVal = row._dateFormatted
-
-                // === PARSE DATE FROM RAW VALUE ===
-                // Case 1: Google Viz Date object - "Date(y,m,d)" — year may be in Buddhist Era!
-                if (rawVal && typeof rawVal === 'string') {
-                    const vizMatch = String(rawVal).match(/Date\((\d+),(\d+),(\d+)\)/)
-                    if (vizMatch) {
-                        let vy = parseInt(vizMatch[1])
-                        let vm = parseInt(vizMatch[2])
-                        let vd = parseInt(vizMatch[3])
-                        if (vy > 2400) vy -= 543 // Convert BE to AD
-                        rowDate = new Date(vy, vm, vd)
+                    const summary = {}
+                    // Parse dd/mm/yyyy format
+                    const parseDMY = (s) => {
+                        if (!s) return null; const p = s.split('/'); if (p.length !== 3) return null; return new
+                            Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]))
                     }
-                }
+                    const startDate = parseDMY(dateFrom.value)
+                    const endDate = (() => { const d = parseDMY(dateTo.value); if (d) d.setHours(23, 59, 59); return d })()
 
-                // Case 2: rawVal is already a Date-like string (ISO format)
-                if (!rowDate && rawVal && typeof rawVal === 'string' && !isNaN(new Date(rawVal).getTime())) {
-                    rowDate = new Date(rawVal)
-                }
+                    let debugShown = false
+                    let totalRows = 0
+                    let matchedRows = 0
+                    let invalidDateRows = 0
 
-                // === PARSE DATE FROM FORMATTED VALUE ===
-                if (!rowDate && fmtVal) {
-                    const dateStr = String(fmtVal).trim()
+                    rawSheetRows.value.forEach(row => {
+                        totalRows++
+                        let rowDate = null
+                        const rawVal = row._dateRaw
+                        const fmtVal = row._dateFormatted
 
-                    // Case 3: Thai short month "6 ก.พ. 2569"
-                    const thaiShort = {
-                        'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.':
-                            8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
-                    }
-                    const thaiLong = {
-                        'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6,
-                        'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
-                    }
-                    const allThaiMonths = { ...thaiShort, ...thaiLong }
-
-                    for (const [thName, thMonth] of Object.entries(allThaiMonths)) {
-                        if (dateStr.includes(thName)) {
-                            // Extract numbers from string
-                            const nums = dateStr.match(/\d+/g)
-                            if (nums && nums.length >= 2) {
-                                let day = parseInt(nums[0])
-                                let year = parseInt(nums[nums.length - 1])
-                                if (year > 2400) year -= 543
-                                else if (year < 100) year += 2000
-                                rowDate = new Date(year, thMonth, day)
+                        // === PARSE DATE FROM RAW VALUE ===
+                        // Case 1: Google Viz Date object - "Date(y,m,d)" — year may be in Buddhist Era!
+                        if (rawVal && typeof rawVal === 'string') {
+                            const vizMatch = String(rawVal).match(/Date\((\d+),(\d+),(\d+)\)/)
+                            if (vizMatch) {
+                                let vy = parseInt(vizMatch[1])
+                                let vm = parseInt(vizMatch[2])
+                                let vd = parseInt(vizMatch[3])
+                                if (vy > 2400) vy -= 543 // Convert BE to AD
+                                rowDate = new Date(vy, vm, vd)
                             }
-                            break
                         }
-                    }
-                    // Case 4: d/m/yyyy or d/m/yy format
-                    if (!rowDate) {
-                        const slashMatch = dateStr.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
-                        if (slashMatch) {
-                            let d = parseInt(slashMatch[1])
-                            let m = parseInt(slashMatch[2]) - 1
-                            let y = parseInt(slashMatch[3])
-                            if (y > 2400) y -= 543
-                            else if (y < 100) y += 2000
-                            rowDate = new Date(y, m, d)
+
+                        // Case 2: rawVal is already a Date-like string (ISO format)
+                        if (!rowDate && rawVal && typeof rawVal === 'string' && !isNaN(new Date(rawVal).getTime())) {
+                            rowDate = new Date(rawVal)
                         }
+
+                        // === PARSE DATE FROM FORMATTED VALUE ===
+                        if (!rowDate && fmtVal) {
+                            const dateStr = String(fmtVal).trim()
+
+                            // Case 3: Thai short month "6 ก.พ. 2569"
+                            const thaiShort = {
+                                'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.':
+                                    8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
+                            }
+                            const thaiLong = {
+                                'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6,
+                                'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
+                            }
+                            const allThaiMonths = { ...thaiShort, ...thaiLong }
+
+                            for (const [thName, thMonth] of Object.entries(allThaiMonths)) {
+                                if (dateStr.includes(thName)) {
+                                    // Extract numbers from string
+                                    const nums = dateStr.match(/\d+/g)
+                                    if (nums && nums.length >= 2) {
+                                        let day = parseInt(nums[0])
+                                        let year = parseInt(nums[nums.length - 1])
+                                        if (year > 2400) year -= 543
+                                        else if (year < 100) year += 2000
+                                        rowDate = new Date(year, thMonth, day)
+                                    }
+                                    break
+                                }
+                            }
+                            // Case 4: d/m/yyyy or d/m/yy format
+                            if (!rowDate) {
+                                const slashMatch = dateStr.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
+                                if (slashMatch) {
+                                    let d = parseInt(slashMatch[1])
+                                    let m = parseInt(slashMatch[2]) - 1
+                                    let y = parseInt(slashMatch[3])
+                                    if (y > 2400) y -= 543
+                                    else if (y < 100) y += 2000
+                                    rowDate = new Date(y, m, d)
+                                }
+                            }
+                            // Case 5: Standard JS Date parse as last resort
+                            if (!rowDate) {
+                                const parsed = new Date(dateStr)
+                                if (!isNaN(parsed.getTime())) rowDate = parsed
+                            }
+                        }
+                        // === DEBUG: Show first row data (only once) ===
+                        if (!debugShown) {
+                            debugShown = true
+                            console.log('=== SHEET DEBUG ===')
+                            console.log('Raw Value (cell.v):', rawVal, typeof rawVal)
+                            console.log('Formatted Value (cell.f):', fmtVal, typeof fmtVal)
+                            console.log('Parsed Date:', rowDate)
+                            console.log('All keys:', Object.keys(row))
+                        }
+                        // === DATE FILTERING ===
+                        if (startDate || endDate) {
+                            if (rowDate && !isNaN(rowDate.getTime())) {
+                                if (startDate && rowDate < startDate) return
+                                if (endDate && rowDate > endDate) return
+                            }
+                        }
+
+                        // === VENDOR & PRODUCT SUMMARIZATION ===
+                        const remark = row['หมายเหตุ'] || ''
+                        const vendor = detectVendor(remark)
+                        if (vendor) {
+                            matchedRows++
+                            const productName = row['ชื่อสินค้า'] || 'ไม่ระบุ'
+                            const totalBoxes = parseInt(row['ผลรวม(ลัง)']) || 0
+                            const totalFractions = parseInt(row['ผลรวม(เศษ)']) || 0
+                            const key = `${productName}_${vendor}`
+                            if (!summary[key]) {
+                                summary[key] = { productName, vendor, totalBoxes: 0, totalFractions: 0, count: 0 }
+                            }
+                            summary[key].totalBoxes += totalBoxes
+                            summary[key].totalFractions += totalFractions
+                            summary[key].count += 1
+                        }
+                    })
+
+                    sheetData.value = Object.values(summary).sort((a, b) => {
+                        if (a.vendor !== b.vendor) return a.vendor.localeCompare(b.vendor)
+                        return b.totalBoxes - a.totalBoxes
+                    })
+
+                    // Update summary totals
+                    const summaryTotals = {
+                        jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }
                     }
-                    // Case 5: Standard JS Date parse as last resort
-                    if (!rowDate) {
-                        const parsed = new Date(dateStr)
-                        if (!isNaN(parsed.getTime())) rowDate = parsed
+                    sheetData.value.forEach(item => {
+                        if (item.vendor === 'จูน') { summaryTotals.jun.total += item.totalBoxes; summaryTotals.jun.count += item.count }
+                        else if (item.vendor === 'CMI') {
+                            summaryTotals.cmi.total += item.totalBoxes; summaryTotals.cmi.count +=
+                                item.count
+                        }
+                        else if (item.vendor === 'บางปู') {
+                            summaryTotals.bangpu.total += item.totalBoxes; summaryTotals.bangpu.count +=
+                                item.count
+                        }
+                    })
+                    sheetSummary.value = summaryTotals
+
+                    // Show filter result info
+                    if (startDate || endDate) {
+                        showToast(`กรองวันที่: พบ ${matchedRows} รายการ จากทั้งหมด ${totalRows} แถว`, 'info')
                     }
-                }
-                // === DEBUG: Show first row data (only once) ===
-                if (!debugShown) {
-                    debugShown = true
-                    console.log('=== SHEET DEBUG ===')
-                    console.log('Raw Value (cell.v):', rawVal, typeof rawVal)
-                    console.log('Formatted Value (cell.f):', fmtVal, typeof fmtVal)
-                    console.log('Parsed Date:', rowDate)
-                    console.log('All keys:', Object.keys(row))
-                }
-                // === DATE FILTERING ===
-                if (startDate || endDate) {
-                    if (rowDate && !isNaN(rowDate.getTime())) {
-                        if (startDate && rowDate < startDate) return
-                        if (endDate && rowDate > endDate) return
-                    }
-                }
-
-                // === VENDOR & PRODUCT SUMMARIZATION ===
-                const remark = row['หมายเหตุ'] || ''
-                const vendor = detectVendor(remark)
-                if (vendor) {
-                matchedRows++
-                const productName = row['ชื่อสินค้า'] || 'ไม่ระบุ'
-                const totalBoxes = parseInt(row['ผลรวม(ลัง)']) || 0
-                const totalFractions = parseInt(row['ผลรวม(เศษ)']) || 0
-                const key = `${productName}_${vendor}`
-                if (!summary[key]) {
-                    summary[key] = { productName, vendor, totalBoxes: 0, totalFractions: 0, count: 0 }
-                }
-                summary[key].totalBoxes += totalBoxes
-                summary[key].totalFractions += totalFractions
-                summary[key].count += 1
-                }
-                })
-
-                sheetData.value = Object.values(summary).sort((a, b) => {
-                if (a.vendor !== b.vendor) return a.vendor.localeCompare(b.vendor)
-                return b.totalBoxes - a.totalBoxes
-                })
-
-                // Update summary totals
-                const summaryTotals = {
-                jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }
-                }
-                sheetData.value.forEach(item => {
-                if (item.vendor === 'จูน') { summaryTotals.jun.total += item.totalBoxes; summaryTotals.jun.count += item.count }
-                else if (item.vendor === 'CMI') {
-                summaryTotals.cmi.total += item.totalBoxes; summaryTotals.cmi.count +=
-                    item.count
-                }
-                else if (item.vendor === 'บางปู') {
-                summaryTotals.bangpu.total += item.totalBoxes; summaryTotals.bangpu.count +=
-                    item.count
-                }
-                })
-                sheetSummary.value = summaryTotals
-
-                // Show filter result info
-                if (startDate || endDate) {
-                showToast(`กรองวันที่: พบ ${matchedRows} รายการ จากทั้งหมด ${totalRows} แถว`, 'info')
-                }
                 }
 
                 const applyDateFilter = () => {
-                processDataWithFilter()
+                    processDataWithFilter()
                 }
 
                 // Helper: format Date to dd/mm/yyyy
                 const toDMY = (d) => {
-                return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2,
-                '0') + '/' + d.getFullYear()
+                    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2,
+                        '0') + '/' + d.getFullYear()
                 }
 
                 const setQuickDate = (range) => {
-                const today = new Date()
-                dateTo.value = toDMY(today)
-                if (range === 'today') {
-                dateFrom.value = toDMY(today)
-                } else if (range === 'week') {
-                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-                dateFrom.value = toDMY(weekAgo)
-                } else if (range === 'month') {
-                const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-                dateFrom.value = toDMY(monthAgo)
-                } else {
-                dateFrom.value = ''
-                dateTo.value = ''
-                }
-                applyDateFilter()
+                    const today = new Date()
+                    dateTo.value = toDMY(today)
+                    if (range === 'today') {
+                        dateFrom.value = toDMY(today)
+                    } else if (range === 'week') {
+                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+                        dateFrom.value = toDMY(weekAgo)
+                    } else if (range === 'month') {
+                        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+                        dateFrom.value = toDMY(monthAgo)
+                    } else {
+                        dateFrom.value = ''
+                        dateTo.value = ''
+                    }
+                    applyDateFilter()
                 }
 
                 // Pieces per box configuration
@@ -1480,36 +1480,36 @@
                 const getPiecesPerBox = (productName) => { return piecesPerBoxMap.value[productName] || 0 }
 
                 const setPiecesPerBox = (productName, value) => {
-                const numValue = parseInt(value) || 0
-                piecesPerBoxMap.value[productName] = numValue
-                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                    const numValue = parseInt(value) || 0
+                    piecesPerBoxMap.value[productName] = numValue
+                    localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
                 }
 
                 const calculateTotalPieces = (item) => {
-                const piecesPerBox = piecesPerBoxMap.value[item.productName] || 0
-                const totalFromBoxes = item.totalBoxes * piecesPerBox
-                const totalPieces = totalFromBoxes + (item.totalFractions || 0)
-                return totalPieces.toLocaleString()
+                    const piecesPerBox = piecesPerBoxMap.value[item.productName] || 0
+                    const totalFromBoxes = item.totalBoxes * piecesPerBox
+                    const totalPieces = totalFromBoxes + (item.totalFractions || 0)
+                    return totalPieces.toLocaleString()
                 }
 
                 onMounted(() => { loadStorage(); fetchSheetData() })
 
                 return {
-                activeTab, products, orders, receiveHistory, toast, showShipmentModal, showOrderDetailModal,
-                showReceiveModal, showSheetModal, selectedShipmentOrder, selectedOrderDetail, selectedOrder, newProduct,
-                selectedProductForBom, newMaterial, bomMaterials, newOrder, calculatedMaterials, newShipment, receiveQty,
-                editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
-                sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
-                showToast, generateOrderNo, formatDate, addProduct, deleteProduct, addMaterialToBom, selectSheetProduct,
-                addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, openShipmentModal,
-                recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
-                editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
-                openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
-                getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchSheetData, applyDateFilter, setQuickDate,
-                getPiecesPerBox, setPiecesPerBox, calculateTotalPieces
+                    activeTab, products, orders, receiveHistory, toast, showShipmentModal, showOrderDetailModal,
+                    showReceiveModal, showSheetModal, selectedShipmentOrder, selectedOrderDetail, selectedOrder, newProduct,
+                    selectedProductForBom, newMaterial, bomMaterials, newOrder, calculatedMaterials, newShipment, receiveQty,
+                    editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
+                    sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
+                    showToast, generateOrderNo, formatDate, addProduct, deleteProduct, addMaterialToBom, selectSheetProduct,
+                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, openShipmentModal,
+                    recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
+                    editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
+                    openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
+                    getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchSheetData, applyDateFilter, setQuickDate,
+                    getPiecesPerBox, setPiecesPerBox, calculateTotalPieces
                 }
-                }
-                }).mount('#app')
+            }
+        }).mount('#app')
     </script>
 </body>
 
