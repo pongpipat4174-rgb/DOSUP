@@ -991,7 +991,7 @@
                     saveStorage(); showToast('เพิ่มสินค้าสำเร็จ!')
                 }
 
-                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id != id); saveStorage(); showToast('ลบสำเร็จ') } }
 
                 const editingProduct = ref(null)
                 const editBom = (product) => { editingProduct.value = JSON.parse(JSON.stringify(product)) }
@@ -1071,7 +1071,7 @@
                     orders.value.unshift(order); saveStorage(); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
                 }
 
-                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id != id); saveStorage(); showToast('ลบสำเร็จ') } }
 
                 const closeOrder = () => {
                     if (!selectedShipmentOrder.value) return
