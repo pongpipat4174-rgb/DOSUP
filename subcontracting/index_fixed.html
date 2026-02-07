@@ -1,0 +1,2387 @@
+ï»¿<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Å¡Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢ | Subcontracting System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            @apply bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+        }
+
+        .btn-success {
+            @apply bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+        }
+
+        .btn-warning {
+            @apply bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+        }
+
+        .btn-danger {
+            @apply bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+        }
+
+        .btn-info {
+            @apply bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+        }
+
+        .btn-secondary {
+            @apply bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-medium py-2.5 px-5 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-md;
+        }
+
+        .input-field {
+            @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 outline-none;
+        }
+
+        .fade-enter-active,
+        .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from,
+        .fade-leave-to {
+            opacity: 0;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="glass shadow-lg sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Å¡Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</h1>
+                            <p class="text-sm text-gray-500">Subcontracting Management System</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- Sync Status Indicator -->
+                        <span v-if="dbSyncing"
+                            class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium flex items-center space-x-1">
+                            <span class="animate-spin">Ã¢ÂÂ³</span>
+                            <span>Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸â€¹Ã Â¸Â´Ã Â¸â€¡Ã Â¸â€žÃ Â¹Å’...</span>
+                        </span>
+                        <!-- Refresh from Database Button -->
+                        <button @click="forceLoadFromDatabase"
+                            class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-200 transition-all"
+                            title="Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹Æ’Ã Â¸Â«Ã Â¸Â¡Ã Â¹Ë†Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Database">
+                            Ã°Å¸â€â€ž Ã Â¸Â£Ã Â¸ÂµÃ Â¹â‚¬Ã Â¸Å¸Ã Â¸Â£Ã Â¸Å 
+                        </button>
+                        <!-- Clear Duplicates Button -->
+                        <button @click="clearDuplicates"
+                            class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-sm font-medium hover:bg-red-200 transition-all"
+                            title="Ã Â¸Â¥Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³">
+                            Ã°Å¸â€”â€˜Ã¯Â¸Â Ã Â¸Â¥Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³
+                        </button>
+                        <!-- Sheet Summary Button -->
+                        <button @click="openSheetSummaryModal" class="btn-info flex items-center space-x-2">
+                            <span>Ã°Å¸â€œÅ </span>
+                            <span class="hidden sm:inline">Ã Â¸â€Ã Â¸Â¹Ã Â¸Â¢Ã Â¸Â­Ã Â¸â€Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet</span>
+                        </button>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                            Ã¢â€”Â Ã Â¸Â­Ã Â¸Â­Ã Â¸â„¢Ã Â¹â€žÃ Â¸Â¥Ã Â¸â„¢Ã Â¹Å’
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="container mx-auto px-4 mt-6">
+            <div class="glass rounded-2xl p-2 card-shadow inline-flex space-x-2 flex-wrap">
+                <button @click="activeTab = 'bom'"
+                    :class="activeTab === 'bom' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                    Ã°Å¸â€œÂ¦ Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£ BOM
+                </button>
+                <button @click="activeTab = 'order'"
+                    :class="activeTab === 'order' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                    Ã°Å¸â€œÂ Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢
+                </button>
+                <button @click="activeTab = 'tracking'"
+                    :class="activeTab === 'tracking' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all duration-300">
+                    Ã°Å¸â€œÅ  Ã Â¸â€¢Ã Â¸Â´Ã Â¸â€Ã Â¸â€¢Ã Â¸Â²Ã Â¸Â¡Ã Â¸â€¡Ã Â¸Â²Ã Â¸â„¢
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6">
+            <!-- BOM Management Tab -->
+            <div v-show="activeTab === 'bom'" class="space-y-6">
+                <!-- Row 1: Create Product (Compact) + BOM Form -->
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <!-- Create Product Form (Compact) -->
+                    <div class="glass rounded-2xl p-4 card-shadow">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mr-2 text-sm">Ã¢Å¾â€¢</span>
+                            Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²
+                        </h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2">
+                                <select v-model="selectedSheetProduct" @change="onSelectSheetProduct"
+                                    class="input-field text-sm flex-1">
+                                    <option value="">-- Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet --</option>
+                                    <option v-for="name in sheetProductNames" :key="name" :value="name">{{ name }}
+                                    </option>
+                                </select>
+                                <button @click="loadProductNamesFromSheet"
+                                    class="text-indigo-600 hover:text-indigo-800 p-2">Ã°Å¸â€â€ž</button>
+                            </div>
+                            <p class="text-xs text-gray-500">Ã Â¸Å¾Ã Â¸Å¡ {{ sheetProductNames.length }} Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</p>
+                            <div v-if="selectedSheetProduct" class="bg-indigo-50 p-2 rounded-lg">
+                                <p class="text-xs text-indigo-700">Ã¢Å“â€¦ {{ selectedSheetProduct }}</p>
+                            </div>
+                            <button @click="addProductFromSheet" class="btn-primary w-full text-sm py-2"
+                                :disabled="!selectedSheetProduct">
+                                Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸Â
+                            </button>
+                            <details class="text-xs">
+                                <summary class="text-gray-500 cursor-pointer">Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¹â‚¬Ã Â¸Â­Ã Â¸â€¡</summary>
+                                <div class="mt-2 space-y-2">
+                                    <input v-model="newProduct.code" type="text" class="input-field text-xs py-2"
+                                        placeholder="Ã Â¸Â£Ã Â¸Â«Ã Â¸Â±Ã Â¸Âª">
+                                    <input v-model="newProduct.name" type="text" class="input-field text-xs py-2"
+                                        placeholder="Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²">
+                                    <input v-model="newProduct.unit" type="text" class="input-field text-xs py-2"
+                                        placeholder="Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢">
+                                    <button @click="addProduct" class="btn-secondary w-full text-xs py-1">Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡</button>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <!-- Add BOM Form -->
+                    <div class="lg:col-span-2 glass rounded-2xl p-4 card-shadow">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <span
+                                class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2 text-sm">Ã°Å¸â€œâ€¹</span>
+                            Ã Â¸ÂÃ Â¸Â³Ã Â¸Â«Ã Â¸â„¢Ã Â¸â€ BOM (Ã Â¸ÂªÃ Â¸Â¹Ã Â¸â€¢Ã Â¸Â£Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢)
+                        </h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <!-- Left: Select Product & Base Qty -->
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</label>
+                                    <select v-model="selectedProductForBom" @change="updateSelectedProductBaseQty"
+                                        class="input-field text-sm">
+                                        <option value="">-- Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸Â --</option>
+                                        <option v-for="p in products" :key="p.id" :value="p.id">{{ p.code }} - {{ p.name
+                                            }}</option>
+                                    </select>
+                                </div>
+                                <div class="bg-indigo-50 p-3 rounded-xl">
+                                    <label class="block text-xs font-medium text-indigo-700 mb-1">Ã°Å¸â€œÂ¦ Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸â„¢</label>
+                                    <div class="flex items-center gap-2">
+                                        <input v-model.number="bomBaseQty" type="number"
+                                            class="input-field text-sm flex-1" placeholder="35000" min="1">
+                                        <span class="text-xs text-gray-600">Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Right: Add Material -->
+                            <div class="space-y-3">
+                                <p class="text-xs font-medium text-gray-700">Ã¢Å¾â€¢ Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡:</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input v-model="newMaterial.name" type="text" class="input-field text-sm col-span-2"
+                                        placeholder="Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡">
+                                    <input v-model.number="newMaterial.qty" type="number" class="input-field text-sm"
+                                        placeholder="Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢">
+                                </div>
+                                <input v-model="newMaterial.unit" type="text" class="input-field text-sm"
+                                    placeholder="Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢ (kg, Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢)">
+                                <button @click="addMaterialToBom" class="btn-success w-full text-sm py-2">
+                                    Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products List -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Ã°Å¸â€œÂ¦ Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¹ÂÃ Â¸Â¥Ã Â¸Â° BOM</h2>
+                    <div v-if="products.length === 0" class="text-center py-12 text-gray-500">
+                        <p class="text-5xl mb-4">Ã°Å¸â€œÂ­</p>
+                        <p>Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â² Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¹Æ’Ã Â¸Â«Ã Â¸Â¡Ã Â¹Ë†</p>
+                    </div>
+                    <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div v-for="product in products" :key="product.id"
+                            class="border border-gray-200 rounded-lg p-3 hover:border-indigo-300 transition-all bg-white">
+                            <!-- Header -->
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-sm text-gray-800 truncate">{{ product.code }} - {{
+                                        product.name }}</h3>
+                                    <p class="text-xs text-gray-400">{{ product.unit }}</p>
+                                </div>
+                                <div class="flex items-center space-x-1 ml-2">
+                                    <button @click="duplicateProduct(product)"
+                                        v-if="product.bom && product.bom.length > 0"
+                                        class="text-indigo-400 hover:bg-indigo-50 p-1 rounded text-xs"
+                                        title="Ã Â¸â€žÃ Â¸Â±Ã Â¸â€Ã Â¸Â¥Ã Â¸Â­Ã Â¸Â">Ã°Å¸â€œâ€¹</button>
+                                    <button @click="deleteProduct(product.id)"
+                                        class="text-red-400 hover:bg-red-50 p-1 rounded text-xs" title="Ã Â¸Â¥Ã Â¸Å¡">Ã°Å¸â€”â€˜Ã¯Â¸Â</button>
+                                </div>
+                            </div>
+                            <!-- BOM List -->
+                            <div v-if="product.bom && product.bom.length > 0">
+                                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                    <span>Ã°Å¸â€œâ€¹ BOM ({{ product.bom.length }} Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£)</span>
+                                    <span class="bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded text-xs">
+                                        Ã Â¸ÂÃ Â¸Â²Ã Â¸â„¢ {{ (product.baseQty || 1000).toLocaleString() }}
+                                        <button @click="editProductBaseQty(product)" class="ml-1">Ã¢Å“ÂÃ¯Â¸Â</button>
+                                    </span>
+                                </div>
+                                <div class="bg-gray-50 rounded p-2 space-y-1 max-h-32 overflow-y-auto text-xs">
+                                    <div v-for="(mat, idx) in product.bom" :key="idx"
+                                        class="flex justify-between items-center py-1 border-b border-gray-100 last:border-0">
+                                        <span class="text-gray-600 truncate flex-1">{{ mat.name }}</span>
+                                        <div class="flex items-center space-x-1 ml-2">
+                                            <span class="font-medium text-indigo-600 whitespace-nowrap">{{
+                                                mat.qty?.toLocaleString() }} {{ mat.unit }}</span>
+                                            <button @click="openEditMaterialModal(product.id, idx, mat)"
+                                                class="text-blue-400 hover:text-blue-600">Ã¢Å“ÂÃ¯Â¸Â</button>
+                                            <button @click="removeMaterialFromBom(product.id, idx)"
+                                                class="text-red-400 hover:text-red-600">Ã¢Å“â€¢</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="text-xs text-amber-500 bg-amber-50 px-2 py-1 rounded">
+                                Ã¢Å¡Â Ã¯Â¸Â Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸Âµ BOM
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Material Modal -->
+            <div v-if="showEditMaterialModal"
+                class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div class="bg-white rounded-2xl p-6 w-full max-w-md card-shadow">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Ã¢Å“ÂÃ¯Â¸Â Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€šÃ Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡</label>
+                            <input v-model="editingMaterial.name" type="text" class="input-field">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</label>
+                                <input v-model.number="editingMaterial.qty" type="number" class="input-field" min="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢</label>
+                                <input v-model="editingMaterial.unit" type="text" class="input-field">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button @click="showEditMaterialModal = false" class="btn-secondary">Ã Â¸Â¢Ã Â¸ÂÃ Â¹â‚¬Ã Â¸Â¥Ã Â¸Â´Ã Â¸Â</button>
+                        <button @click="saveEditMaterial" class="btn-primary">Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸Â</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Order Tab -->
+            <div v-show="activeTab === 'order'" class="space-y-6">
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <span
+                            class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mr-3">Ã°Å¸â€œÂ</span>
+                        Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢
+                    </h2>
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢
+                                    <span class="text-xs text-gray-400">(Ã Â¸Â­Ã Â¸Â±Ã Â¸â€¢Ã Â¹â€šÃ Â¸â„¢Ã Â¸Â¡Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´)</span>
+                                </label>
+                                <input v-model="newOrder.orderNo" type="text" class="input-field bg-gray-50" readonly
+                                    placeholder="Ã Â¸Ë†Ã Â¸Â°Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Â­Ã Â¸Â±Ã Â¸â€¢Ã Â¹â€šÃ Â¸â„¢Ã Â¸Â¡Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´Ã Â¹â‚¬Ã Â¸Â¡Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 mb-2">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</label>
+                                <select v-model="newOrder.productId" @change="calculateMaterials" class="input-field">
+                                    <option value="">-- Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â² --</option>
+                                    <option v-for="p in productsWithBom" :key="p.id" :value="p.id">{{ p.code }} - {{
+                                        p.name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</label>
+                                <input v-model.number="newOrder.qty" @input="calculateMaterials" type="number"
+                                    class="input-field" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡
+                                    (Subcontractor)</label>
+                                <input v-model="newOrder.subcontractor" type="text" class="input-field"
+                                    placeholder="Ã Â¹â‚¬Ã Â¸Å Ã Â¹Ë†Ã Â¸â„¢ Ã Â¸Å¡Ã Â¸Â£Ã Â¸Â´Ã Â¸Â©Ã Â¸Â±Ã Â¸â€” ABC">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸ÂÃ Â¸Â³Ã Â¸Â«Ã Â¸â„¢Ã Â¸â€Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</label>
+                                <input v-model="newOrder.dueDate" type="date" class="input-field">
+                            </div>
+                        </div>
+
+                        <!-- Calculated Materials -->
+                        <div>
+                            <div
+                                class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border-2 border-indigo-100">
+                                <h3 class="font-bold text-indigo-800 mb-4">Ã°Å¸â€œÂ¦ Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡ (Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€šÃ Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¹â€žÃ Â¸â€Ã Â¹â€°)</h3>
+                                <div v-if="calculatedMaterials.length === 0" class="text-center py-8 text-gray-500">
+                                    <p class="text-4xl mb-2">Ã°Å¸â€œÅ </p>
+                                    <p class="text-sm">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¹ÂÃ Â¸Â¥Ã Â¸Â°Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Â¸Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸â€žÃ Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â€œ</p>
+                                </div>
+                                <div v-else class="space-y-3">
+                                    <div v-for="(mat, idx) in calculatedMaterials" :key="idx"
+                                        class="flex justify-between items-center py-3 border-b border-indigo-100 last:border-0">
+                                        <span class="text-gray-700 font-medium">{{ mat.name }}</span>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" v-model.number="mat.totalQty"
+                                                class="w-24 px-3 py-1 border-2 border-indigo-300 rounded-lg text-center font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                                                min="0" step="0.1">
+                                            <span class="text-indigo-600 font-medium">{{ mat.unit }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex space-x-4">
+                        <button @click="createJobOrder" class="btn-success flex-1">
+                            Ã¢Å“â€¦ Ã Â¸Â¢Ã Â¸Â·Ã Â¸â„¢Ã Â¸Â¢Ã Â¸Â±Ã Â¸â„¢Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡ / Ã Â¸Â­Ã Â¸Â­Ã Â¸ÂÃ Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Ã°Å¸â€œâ€ž Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Â¥Ã Â¹Ë†Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â¸Ã Â¸â€</h2>
+                    <div v-if="orders.filter(o => o.status !== 'completed').length === 0"
+                        class="text-center py-8 text-gray-500">
+                        Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢
+                    </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸â€”Ã Â¸ÂµÃ Â¹Ë†</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</th>
+                                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders.filter(o => o.status !== 'completed').slice(0,5)"
+                                    :key="order.id" class="border-b hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-medium">{{ order.orderNo }}</td>
+                                    <td class="px-4 py-3">{{ order.productName }}</td>
+                                    <td class="px-4 py-3">{{ order.qty?.toLocaleString() }} Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢</td>
+                                    <td class="px-4 py-3">{{ order.subcontractor }}</td>
+                                    <td class="px-4 py-3 text-gray-500">{{ formatDate(order.createdAt) }}</td>
+                                    <td class="px-4 py-3 text-center">
+                                        <div class="flex items-center justify-center space-x-1">
+                                            <button @click="openShipmentModal(order)"
+                                                class="text-teal-600 hover:text-teal-800 p-1" title="Ã Â¹ÂÃ Â¸Å¡Ã Â¹Ë†Ã Â¸â€¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡">
+                                                Ã°Å¸Å¡Å¡
+                                            </button>
+                                            <button @click="openDeliveryNote(order)"
+                                                class="text-indigo-600 hover:text-indigo-800 p-1" title="Ã Â¸Å¾Ã Â¸Â´Ã Â¸Â¡Ã Â¸Å¾Ã Â¹Å’Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡">
+                                                Ã°Å¸â€“Â¨Ã¯Â¸Â
+                                            </button>
+                                            <button @click="openEditOrder(order)"
+                                                class="text-amber-600 hover:text-amber-800 p-1" title="Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€š">
+                                                Ã¢Å“ÂÃ¯Â¸Â
+                                            </button>
+                                            <button @click="deleteOrder(order.id)"
+                                                class="text-red-500 hover:text-red-700 p-1" title="Ã Â¸Â¥Ã Â¸Å¡">
+                                                Ã°Å¸â€”â€˜Ã¯Â¸Â
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Tab -->
+            <div v-show="activeTab === 'tracking'" class="space-y-6">
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                            <span
+                                class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mr-3">Ã°Å¸â€œÅ </span>
+                            Ã Â¸â€¢Ã Â¸Â´Ã Â¸â€Ã Â¸â€¢Ã Â¸Â²Ã Â¸Â¡Ã Â¸â€¡Ã Â¸Â²Ã Â¸â„¢Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢ (Subcontracting List)
+                        </h2>
+                        <button @click="fetchSheetData" :disabled="sheetLoading"
+                            class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 flex items-center space-x-2">
+                            <span v-if="sheetLoading">Ã¢ÂÂ³</span>
+                            <span v-else>Ã°Å¸â€â€ž</span>
+                            <span>{{ sheetLoading ? 'Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸Â­Ã Â¸Â±Ã Â¸â€ºÃ Â¹â‚¬Ã Â¸â€Ã Â¸â€¢...' : 'Ã Â¸Â­Ã Â¸Â±Ã Â¸â€ºÃ Â¹â‚¬Ã Â¸â€Ã Â¸â€¢Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet' }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸â€”Ã Â¸Â±Ã Â¹â€°Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¡Ã Â¸â€</p>
+                            <p class="text-3xl font-bold">{{ orders.length }}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</p>
+                            <p class="text-3xl font-bold">{{ orders.filter(o => o.status === 'in_progress').length }}
+                            </p>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã Â¹â‚¬Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€¡Ã Â¸Ë†Ã Â¸ÂªÃ Â¸Â´Ã Â¹â€°Ã Â¸â„¢</p>
+                            <p class="text-3xl font-bold">{{ orders.filter(o => o.status === 'completed').length }}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡</p>
+                            <p class="text-3xl font-bold">{{ totalOutstanding?.toLocaleString() }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Orders Table -->
+                    <div v-if="orders.length === 0" class="text-center py-12 text-gray-500">
+                        <p class="text-5xl mb-4">Ã°Å¸â€œÂ­</p>
+                        <p>Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</p>
+                    </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                <tr>
+                                    <th class="px-4 py-4 text-left text-sm font-bold text-gray-700">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡</th>
+                                    <th class="px-4 py-4 text-left text-sm font-bold text-gray-700">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¹ÂÃ Â¸Â¥Ã Â¹â€°Ã Â¸Â§</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">Ã Â¸ÂªÃ Â¸â€“Ã Â¸Â²Ã Â¸â„¢Ã Â¸Â°</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders" :key="order.id"
+                                    class="border-b hover:bg-indigo-50 transition-all">
+                                    <td class="px-4 py-4">
+                                        <span class="font-bold text-indigo-600">{{ order.orderNo }}</span>
+                                        <p class="text-xs text-gray-500">{{ order.subcontractor }}</p>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span class="font-medium">{{ order.productName }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">{{
+                                            order.qty?.toLocaleString() }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">{{
+                                            order.receivedQty?.toLocaleString() }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span
+                                            :class="order.outstandingQty > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'"
+                                            class="px-3 py-1 rounded-full font-bold">{{
+                                            order.outstandingQty?.toLocaleString() }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span v-if="order.status === 'completed'"
+                                            class="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">Ã¢Å“â€¦
+                                            Ã Â¸â€žÃ Â¸Â£Ã Â¸Å¡Ã Â¹ÂÃ Â¸Â¥Ã Â¹â€°Ã Â¸Â§</span>
+                                        <span v-else
+                                            class="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-medium">Ã¢ÂÂ³
+                                            Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <button @click="openOrderDetail(order)"
+                                            class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all">
+                                            Ã¯Â¿Â½ Ã Â¸â€Ã Â¸Â¹Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â¥Ã Â¸Â°Ã Â¹â‚¬Ã Â¸Â­Ã Â¸ÂµÃ Â¸Â¢Ã Â¸â€
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Receive History -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Ã°Å¸â€œÅ“ Ã Â¸â€ºÃ Â¸Â£Ã Â¸Â°Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡</h2>
+                    <div v-if="receiveHistory.length === 0" class="text-center py-8 text-gray-500">
+                        Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¸â€ºÃ Â¸Â£Ã Â¸Â°Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡
+                    </div>
+                    <div v-else class="space-y-3">
+                        <div v-for="(rec, idx) in receiveHistory.slice().reverse()" :key="idx"
+                            class="bg-gray-50 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-800">{{ rec.orderNo }} - {{ rec.productName }}</p>
+                                <p class="text-sm text-gray-500">{{ formatDate(rec.receivedAt) }}</p>
+                            </div>
+                            <span class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold">+{{ rec.qty }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Receive Modal -->
+        <div v-if="showReceiveModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="glass rounded-2xl p-6 w-full max-w-md card-shadow">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Ã°Å¸â€œÂ¥ Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ - {{ selectedOrder?.orderNo }}</h3>
+                <div class="mb-4">
+                    <p class="text-gray-600 mb-2">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²: <strong>{{ selectedOrder?.productName }}</strong></p>
+                    <p class="text-gray-600 mb-2">Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡: <strong class="text-red-600">{{ selectedOrder?.outstandingQty
+                            }} {{ selectedOrder?.productUnit }}</strong></p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡</label>
+                    <input v-model.number="receiveQty" type="number" :max="selectedOrder?.outstandingQty"
+                        class="input-field" placeholder="Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢">
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="closeReceiveModal"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl transition-all">
+                        Ã Â¸Â¢Ã Â¸ÂÃ Â¹â‚¬Ã Â¸Â¥Ã Â¸Â´Ã Â¸Â
+                    </button>
+                    <button @click="confirmReceive" class="flex-1 btn-success">
+                        Ã¢Å“â€¦ Ã Â¸Â¢Ã Â¸Â·Ã Â¸â„¢Ã Â¸Â¢Ã Â¸Â±Ã Â¸â„¢Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sheet Summary Modal -->
+        <div v-if="showSheetModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="glass rounded-2xl p-6 w-full max-w-4xl card-shadow max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Ã°Å¸â€œÅ  Ã Â¸ÂªÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€ºÃ Â¸Â¢Ã Â¸Â­Ã Â¸â€Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Google Sheet</h3>
+                    <button @click="closeSheetModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="flex space-x-2 mb-4 flex-wrap gap-2">
+                    <button @click="sheetFilter = 'all'"
+                        :class="sheetFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'"
+                        class="px-4 py-2 rounded-lg font-medium transition-all">
+                        Ã Â¸â€”Ã Â¸Â±Ã Â¹â€°Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¡Ã Â¸â€
+                    </button>
+                    <button @click="sheetFilter = 'Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢'"
+                        :class="sheetFilter === 'Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢' ? 'bg-pink-600 text-white' : 'bg-pink-100 text-pink-700'"
+                        class="px-4 py-2 rounded-lg font-medium transition-all">
+                        Ã°Å¸ÂÂ­ Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢
+                    </button>
+                    <button @click="sheetFilter = 'CMI'"
+                        :class="sheetFilter === 'CMI' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'"
+                        class="px-4 py-2 rounded-lg font-medium transition-all">
+                        Ã°Å¸ÂÂ­ CMI
+                    </button>
+                    <button @click="sheetFilter = 'Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹'"
+                        :class="sheetFilter === 'Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'"
+                        class="px-4 py-2 rounded-lg font-medium transition-all">
+                        Ã°Å¸ÂÂ­ Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹
+                    </button>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div
+                    class="flex flex-wrap items-center gap-3 mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-600">Ã°Å¸â€œâ€¦ Ã Â¸Å Ã Â¹Ë†Ã Â¸Â§Ã Â¸â€¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†:</span>
+                        <input type="date" v-model="dateFrom" @change="applyDateFilter"
+                            class="px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
+                        <span class="text-gray-500">Ã Â¸â€“Ã Â¸Â¶Ã Â¸â€¡</span>
+                        <input type="date" v-model="dateTo" @change="applyDateFilter"
+                            class="px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm">
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="setQuickDate('today')"
+                            class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all font-medium">
+                            Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°
+                        </button>
+                        <button @click="setQuickDate('week')"
+                            class="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all font-medium">
+                            7 Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢
+                        </button>
+                        <button @click="setQuickDate('month')"
+                            class="px-3 py-1.5 text-xs bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 transition-all font-medium">
+                            30 Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢
+                        </button>
+                        <button @click="setQuickDate('all')"
+                            class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-medium">
+                            Ã Â¸â€”Ã Â¸Â±Ã Â¹â€°Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¡Ã Â¸â€
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div v-if="sheetLoading" class="flex-1 flex items-center justify-center py-12">
+                    <div class="text-center">
+                        <div class="loader mx-auto mb-4"></div>
+                        <p class="text-gray-600">Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Google Sheet...</p>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div v-else-if="sheetError" class="flex-1 flex items-center justify-center py-12">
+                    <div class="text-center text-red-500">
+                        <p class="text-5xl mb-4">Ã¢ÂÅ’</p>
+                        <p>{{ sheetError }}</p>
+                        <button @click="fetchSheetData" class="mt-4 btn-primary">Ã Â¸Â¥Ã Â¸Â­Ã Â¸â€¡Ã Â¹Æ’Ã Â¸Â«Ã Â¸Â¡Ã Â¹Ë†</button>
+                    </div>
+                </div>
+
+                <!-- Data Display -->
+                <div v-else class="flex-1 overflow-auto">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã°Å¸ÂÂ­ Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢</p>
+                            <p class="text-2xl font-bold">{{ getSummaryByVendor('Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢').totalBoxes }} Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡</p>
+                            <p class="text-sm opacity-80">{{ getSummaryByVendor('Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢').count }} Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã°Å¸ÂÂ­ CMI</p>
+                            <p class="text-2xl font-bold">{{ getSummaryByVendor('CMI').totalBoxes }} Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡</p>
+                            <p class="text-sm opacity-80">{{ getSummaryByVendor('CMI').count }} Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">Ã°Å¸ÂÂ­ Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹</p>
+                            <p class="text-2xl font-bold">{{ getSummaryByVendor('Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹').totalBoxes }} Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡</p>
+                            <p class="text-sm opacity-80">{{ getSummaryByVendor('Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹').count }} Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</p>
+                        </div>
+                    </div>
+
+                    <!-- Product Summary Table -->
+                    <div v-if="filteredSheetSummary.length > 0" class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</th>
+                                    <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡ (Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡)</th>
+                                    <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡ (Ã Â¹â‚¬Ã Â¸Â¨Ã Â¸Â©)</th>
+                                    <th class="px-4 py-3 text-center text-sm font-bold text-gray-700 bg-purple-50">
+                                        Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢/Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡</th>
+                                    <th class="px-4 py-3 text-center text-sm font-bold text-gray-700 bg-purple-50">
+                                        Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢</th>
+                                    <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</th>
+                                    <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">Ã Â¹ÂÃ Â¸Â«Ã Â¸Â¥Ã Â¹Ë†Ã Â¸â€¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â¡Ã Â¸Â²</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(item, idx) in filteredSheetSummary" :key="idx"
+                                    class="border-b hover:bg-indigo-50 transition-all">
+                                    <td class="px-4 py-3">
+                                        <span class="font-medium text-gray-800">{{ item.productName }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">{{
+                                            item.totalBoxes }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold">{{
+                                            item.totalFractions }}</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center bg-purple-50/50">
+                                        <input type="number" :value="getPiecesPerBox(item.productName)"
+                                            @change="setPiecesPerBox(item.productName, $event.target.value)"
+                                            class="w-16 px-2 py-1 text-center border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none text-sm font-medium"
+                                            placeholder="0" min="0">
+                                    </td>
+                                    <td class="px-4 py-3 text-center bg-purple-50/50">
+                                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold">
+                                            {{ calculateTotalPieces(item) }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="text-gray-600">{{ item.count }}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span :class="{
+                                            'bg-pink-100 text-pink-700': item.vendor === 'Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢',
+                                            'bg-blue-100 text-blue-700': item.vendor === 'CMI',
+                                            'bg-green-100 text-green-700': item.vendor === 'Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹'
+                                        }" class="px-2 py-1 rounded-full text-sm font-medium">{{ item.vendor }}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-else class="text-center py-12 text-gray-500">
+                        <p class="text-5xl mb-4">Ã°Å¸â€œÂ­</p>
+                        <p>Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Å¾Ã Â¸Å¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸ÂªÃ Â¸Â³Ã Â¸Â«Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€¢Ã Â¸Â±Ã Â¸Â§Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸â€¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸Â</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                    <p class="text-sm text-gray-500">Ã Â¸Â­Ã Â¸Â±Ã Â¸â€ºÃ Â¹â‚¬Ã Â¸â€Ã Â¸â€¢Ã Â¸Â¥Ã Â¹Ë†Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â¸Ã Â¸â€: {{ sheetLastUpdated || '-' }}</p>
+                    <button @click="fetchSheetData" class="btn-primary">
+                        Ã°Å¸â€â€ž Ã Â¸Â£Ã Â¸ÂµÃ Â¹â‚¬Ã Â¸Å¸Ã Â¸Â£Ã Â¸Å Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Note Modal -->
+        <div v-if="showDeliveryNoteModal"
+            class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:bg-white print:p-0">
+            <div
+                class="bg-white rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto card-shadow print:max-w-none print:rounded-none print:shadow-none print:max-h-none">
+                <!-- Header Actions (hide on print) -->
+                <div class="flex justify-between items-center p-4 border-b print:hidden">
+                    <h3 class="text-xl font-bold text-gray-800">Ã°Å¸â€“Â¨Ã¯Â¸Â Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡</h3>
+                    <div class="flex space-x-2">
+                        <button @click="printDeliveryNote" class="btn-primary text-sm">Ã°Å¸â€“Â¨Ã¯Â¸Â Ã Â¸Å¾Ã Â¸Â´Ã Â¸Â¡Ã Â¸Å¾Ã Â¹Å’</button>
+                        <button @click="exportDeliveryNotePDF" class="btn-success text-sm">Ã°Å¸â€œâ€ž PDF</button>
+                        <button @click="showDeliveryNoteModal = false" class="btn-secondary text-sm">Ã Â¸â€ºÃ Â¸Â´Ã Â¸â€</button>
+                    </div>
+                </div>
+
+                <!-- Printable Content -->
+                <div id="delivery-note-content" class="p-6 print:p-8">
+                    <!-- Document Title -->
+                    <div class="text-center mb-6">
+                        <h2
+                            class="text-3xl font-bold text-indigo-700 border-2 border-indigo-700 inline-block px-8 py-2">
+                            Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ / Delivery Note
+                        </h2>
+                    </div>
+
+                    <!-- Document Info -->
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div class="space-y-2">
+                            <p><strong>Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡:</strong> {{ selectedDeliveryOrder?.orderNo }}</p>
+                            <p><strong>Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†:</strong> {{ formatDateThai(selectedDeliveryOrder?.createdAt) }}</p>
+                            <p><strong>Ã Â¸ÂÃ Â¸Â³Ã Â¸Â«Ã Â¸â„¢Ã Â¸â€Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡:</strong> {{ selectedDeliveryOrder?.dueDate || '-' }}</p>
+                        </div>
+                        <div class="space-y-2 text-right">
+                            <p><strong>Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡:</strong> {{ selectedDeliveryOrder?.subcontractor }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="mb-6">
+                        <h3 class="font-bold text-lg mb-3 bg-gray-100 p-2">Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â¥Ã Â¸Â°Ã Â¹â‚¬Ã Â¸Â­Ã Â¸ÂµÃ Â¸Â¢Ã Â¸â€Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</h3>
+                        <table class="w-full border-collapse border border-gray-400">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="border border-gray-400 px-4 py-2 text-left">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-center">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-center">Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border border-gray-400 px-4 py-3">{{ selectedDeliveryOrder?.productName
+                                        }}</td>
+                                    <td class="border border-gray-400 px-4 py-3 text-center font-bold">{{
+                                        selectedDeliveryOrder?.qty?.toLocaleString() }}</td>
+                                    <td class="border border-gray-400 px-4 py-3 text-center">{{
+                                        selectedDeliveryOrder?.productUnit }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Materials to Send -->
+                    <div class="mb-6">
+                        <h3 class="font-bold text-lg mb-3 bg-gray-100 p-2">Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â¡Ã Â¸Â­Ã Â¸Å¡</h3>
+                        <table class="w-full border-collapse border border-gray-400">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="border border-gray-400 px-4 py-2 text-left w-12">#</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-left">Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-center">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-center">Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢</th>
+                                    <th class="border border-gray-400 px-4 py-2 text-center">Ã Â¸Â«Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â¢Ã Â¹â‚¬Ã Â¸Â«Ã Â¸â€¢Ã Â¸Â¸</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(mat, idx) in selectedDeliveryOrder?.materials" :key="idx">
+                                    <td class="border border-gray-400 px-4 py-3 text-center">{{ idx + 1 }}</td>
+                                    <td class="border border-gray-400 px-4 py-3">{{ mat.name }}</td>
+                                    <td class="border border-gray-400 px-4 py-3 text-center font-bold">{{
+                                        mat.totalQty?.toLocaleString() }}</td>
+                                    <td class="border border-gray-400 px-4 py-3 text-center">{{ mat.unit }}</td>
+                                    <td class="border border-gray-400 px-4 py-3 text-center">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Signature Section -->
+                    <div class="grid grid-cols-3 gap-8 mt-12 pt-8 border-t-2 border-gray-300">
+                        <div class="text-center">
+                            <div class="border-b-2 border-gray-800 h-16 mb-2"></div>
+                            <p class="font-medium">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡</p>
+                            <p class="text-sm text-gray-500">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†: ___/___/______</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-b-2 border-gray-800 h-16 mb-2"></div>
+                            <p class="font-medium">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡</p>
+                            <p class="text-sm text-gray-500">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†: ___/___/______</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-b-2 border-gray-800 h-16 mb-2"></div>
+                            <p class="font-medium">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â­Ã Â¸â„¢Ã Â¸Â¸Ã Â¸Â¡Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´</p>
+                            <p class="text-sm text-gray-500">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†: ___/___/______</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="text-center mt-8 pt-4 border-t text-xs text-gray-500">
+                        <p>Ã Â¹â‚¬Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â²Ã Â¸Â£Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°Ã Â¸Â­Ã Â¸Â­Ã Â¸ÂÃ Â¹â€šÃ Â¸â€Ã Â¸Â¢Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Å¡Ã Â¸Ë†Ã Â¸Â±Ã Â¸â€Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢ | Ã Â¸Å¾Ã Â¸Â´Ã Â¸Â¡Ã Â¸Å¾Ã Â¹Å’Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†: {{ new Date().toLocaleDateString('th-TH') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Detail Modal -->
+        <div v-if="showOrderDetailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto card-shadow">
+                <div
+                    class="flex justify-between items-center p-6 border-b bg-gradient-to-r from-indigo-500 to-purple-600 rounded-t-2xl">
+                    <h3 class="text-xl font-bold text-white">Ã°Å¸â€œâ€¹ Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â¥Ã Â¸Â°Ã Â¹â‚¬Ã Â¸Â­Ã Â¸ÂµÃ Â¸Â¢Ã Â¸â€Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡ {{ selectedOrderDetail?.orderNo }}</h3>
+                    <button @click="showOrderDetailModal = false"
+                        class="text-white hover:bg-white/20 p-2 rounded-lg">Ã¢Å“â€¢</button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Order Summary -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-sm text-gray-500">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</p>
+                            <p class="font-bold text-lg">{{ selectedOrderDetail?.productName }}</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-xl">
+                            <p class="text-sm text-gray-500">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡</p>
+                            <p class="font-bold text-lg">{{ selectedOrderDetail?.subcontractor || '-' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Qty Summary -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-blue-600">Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</p>
+                            <p class="font-bold text-2xl text-blue-700">{{ selectedOrderDetail?.qty?.toLocaleString() }}
+                            </p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-green-600">Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¹ÂÃ Â¸Â¥Ã Â¹â€°Ã Â¸Â§</p>
+                            <p class="font-bold text-2xl text-green-700">{{
+                                selectedOrderDetail?.receivedQty?.toLocaleString() }}</p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-xl text-center">
+                            <p class="text-sm text-red-600">Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡</p>
+                            <p class="font-bold text-2xl text-red-700">{{
+                                selectedOrderDetail?.outstandingQty?.toLocaleString() }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Receipt History from Sheet -->
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-3">Ã°Å¸â€œÂ¦ Ã Â¸â€ºÃ Â¸Â£Ã Â¸Â°Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ (Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet)</h4>
+                        <div v-if="selectedOrderDetail?.sheetRecords && selectedOrderDetail.sheetRecords.length > 0"
+                            class="space-y-2">
+                            <div v-for="(record, idx) in selectedOrderDetail.sheetRecords" :key="idx"
+                                class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-800">{{ record.productName }}</p>
+                                    <p class="text-sm text-gray-500">{{ record.remark }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-indigo-600">{{ record.boxes?.toLocaleString() }} Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡</p>
+                                    <p class="text-sm text-gray-500">+ {{ record.fractions?.toLocaleString() }} Ã Â¹â‚¬Ã Â¸Â¨Ã Â¸Â©</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-8 text-gray-500 bg-gray-50 rounded-xl">
+                            <p class="text-4xl mb-2">Ã°Å¸â€œÂ­</p>
+                            <p>Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet</p>
+                            <p class="text-sm mt-2">Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¹Æ’Ã Â¸ÂªÃ Â¹Ë†Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€š {{ selectedOrderDetail?.orderNo }} Ã Â¹Æ’Ã Â¸â„¢ column "Ã Â¸Â«Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â¢Ã Â¹â‚¬Ã Â¸Â«Ã Â¸â€¢Ã Â¸Â¸"
+                                Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ Sheet</p>
+                        </div>
+                    </div>
+
+                    <!-- Delivery Plans -->
+                    <div>
+                        <h4 class="font-bold text-gray-800 mb-3">Ã°Å¸â€œâ€¦ Ã Â¹ÂÃ Â¸Å“Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ (Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸Â)</h4>
+
+                        <!-- Add New Plan Form -->
+                        <div class="bg-indigo-50 p-4 rounded-xl mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Ë†Ã Â¸Â°Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</label>
+                                    <input v-model="newDeliveryPlan.plannedDate" type="date"
+                                        class="w-full px-3 py-2 border rounded-lg text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</label>
+                                    <input v-model.number="newDeliveryPlan.plannedQty" type="number"
+                                        class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Ã Â¸Â«Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â¢Ã Â¹â‚¬Ã Â¸Â«Ã Â¸â€¢Ã Â¸Â¸</label>
+                                    <input v-model="newDeliveryPlan.note" type="text"
+                                        class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Ã Â¹â‚¬Ã Â¸Å Ã Â¹Ë†Ã Â¸â„¢ Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë† 1">
+                                </div>
+                                <div class="flex items-end">
+                                    <button @click="addDeliveryPlan"
+                                        class="w-full bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition-all">
+                                        Ã¢Å¾â€¢ Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¹ÂÃ Â¸Å“Ã Â¸â„¢
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Plans List -->
+                        <div v-if="selectedOrderDetail?.deliveryPlans && selectedOrderDetail.deliveryPlans.length > 0"
+                            class="space-y-2">
+                            <div v-for="(plan, idx) in selectedOrderDetail.deliveryPlans" :key="idx"
+                                class="bg-gray-50 p-4 rounded-xl flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-gray-800">Ã°Å¸â€œâ€  {{ formatDateThai(plan.plannedDate) }}</p>
+                                    <p class="text-sm text-gray-500">{{ plan.note || '-' }}</p>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="font-bold text-lg text-indigo-600">{{ plan.plannedQty?.toLocaleString()
+                                        }}</span>
+                                    <button @click="removeDeliveryPlan(idx)"
+                                        class="text-red-400 hover:text-red-600">Ã°Å¸â€”â€˜Ã¯Â¸Â</button>
+                                </div>
+                            </div>
+                            <div class="text-right text-sm text-gray-600 mt-2">
+                                Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡Ã Â¹ÂÃ Â¸Å“Ã Â¸â„¢Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡: <span class="font-bold text-indigo-600">{{
+                                    getTotalPlannedQty()?.toLocaleString() }}</span> Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢
+                            </div>
+                        </div>
+                        <div v-else class="text-center py-4 text-gray-400 text-sm">
+                            Ã Â¸Â¢Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¹ÂÃ Â¸Å“Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡
+                        </div>
+                    </div>
+
+                    <!-- Materials Sent -->
+                    <div v-if="selectedOrderDetail?.materials && selectedOrderDetail.materials.length > 0">
+                        <h4 class="font-bold text-gray-800 mb-3">Ã°Å¸â€œâ€¹ Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¹â€žÃ Â¸â€º</h4>
+                        <table class="w-full">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£</th>
+                                    <th class="px-4 py-2 text-right">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢</th>
+                                    <th class="px-4 py-2 text-center">Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="mat in selectedOrderDetail.materials" :key="mat.name" class="border-b">
+                                    <td class="px-4 py-3">{{ mat.name }}</td>
+                                    <td class="px-4 py-3 text-right font-medium">{{ mat.totalQty?.toLocaleString() }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center">{{ mat.unit }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end p-6 border-t">
+                    <button @click="showOrderDetailModal = false" class="btn-secondary">Ã Â¸â€ºÃ Â¸Â´Ã Â¸â€</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Order Modal -->
+        <div v-if="showEditOrderModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl w-full max-w-lg card-shadow">
+                <div
+                    class="flex justify-between items-center p-6 border-b bg-gradient-to-r from-amber-500 to-orange-600 rounded-t-2xl">
+                    <h3 class="text-xl font-bold text-white">Ã¢Å“ÂÃ¯Â¸Â Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€šÃ Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢ {{ editingOrder?.orderNo }}</h3>
+                    <button @click="showEditOrderModal = false"
+                        class="text-white hover:bg-white/20 p-2 rounded-lg">Ã¢Å“â€¢</button>
+                </div>
+
+                <div class="p-6 space-y-4" v-if="editingOrder">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</label>
+                        <input type="text" v-model="editingOrder.productName" class="input-field" readonly>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</label>
+                        <input type="number" v-model.number="editingOrder.qty" class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡</label>
+                        <input type="text" v-model="editingOrder.subcontractor" class="input-field">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ã Â¸ÂÃ Â¸Â³Ã Â¸Â«Ã Â¸â„¢Ã Â¸â€Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</label>
+                        <input type="date" v-model="editingOrder.dueDate" class="input-field">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 p-6 border-t">
+                    <button @click="showEditOrderModal = false" class="btn-secondary">Ã Â¸Â¢Ã Â¸ÂÃ Â¹â‚¬Ã Â¸Â¥Ã Â¸Â´Ã Â¸Â</button>
+                    <button @click="saveEditOrder" class="btn-primary">Ã°Å¸â€™Â¾ Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸Â</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Partial Shipment Modal (Ã Â¹ÂÃ Â¸Å¡Ã Â¹Ë†Ã Â¸â€¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¥Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡) -->
+        <div v-if="showShipmentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl w-full max-w-2xl card-shadow max-h-[90vh] overflow-y-auto">
+                <div
+                    class="flex justify-between items-center p-6 border-b bg-gradient-to-r from-teal-500 to-cyan-600 rounded-t-2xl sticky top-0">
+                    <h3 class="text-xl font-bold text-white">Ã°Å¸Å¡Å¡ Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸ÂÃ Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ - {{ selectedShipmentOrder?.orderNo }}
+                    </h3>
+                    <button @click="showShipmentModal = false"
+                        class="text-white hover:bg-white/20 p-2 rounded-lg">Ã¢Å“â€¢</button>
+                </div>
+
+                <div class="p-6 space-y-4" v-if="selectedShipmentOrder">
+                    <!-- Order Info -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div><span class="text-gray-500">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²:</span> <span class="font-medium">{{
+                                    selectedShipmentOrder.productName }}</span></div>
+                            <div><span class="text-gray-500">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡:</span> <span class="font-medium">{{
+                                    selectedShipmentOrder.qty?.toLocaleString() }} Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢</span></div>
+                            <div><span class="text-gray-500">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡:</span> <span class="font-medium">{{
+                                    selectedShipmentOrder.subcontractor }}</span></div>
+                            <div><span class="text-gray-500">Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†:</span> <span class="font-bold text-teal-600">{{
+                                    (selectedShipmentOrder.shipments?.length || 0) + 1 }}</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Shipment Date -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ã°Å¸â€œâ€¦ Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Ë†Ã Â¸Â£Ã Â¸Â´Ã Â¸â€¡</label>
+                        <input type="date" v-model="newShipment.date" class="input-field">
+                    </div>
+
+                    <!-- Materials to Ship -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ã°Å¸â€œÂ¦ Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°</label>
+                        <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                            <div v-for="(mat, idx) in newShipment.materials" :key="idx"
+                                class="flex items-center justify-between py-2 border-b last:border-0">
+                                <div class="flex-1">
+                                    <span class="font-medium">{{ mat.name }}</span>
+                                    <span class="text-xs text-gray-500 ml-2">(Ã Â¹â‚¬Ã Â¸Â«Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­: {{ mat.remaining?.toLocaleString()
+                                        }} {{ mat.unit }})</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="number" v-model.number="mat.shipQty"
+                                        class="w-24 px-3 py-1 border-2 border-teal-300 rounded-lg text-center font-bold focus:border-teal-500"
+                                        :max="mat.remaining" min="0" step="0.1">
+                                    <span class="text-gray-600 text-sm w-12">{{ mat.unit }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previous Shipments -->
+                    <div v-if="selectedShipmentOrder.shipments?.length > 0">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ã°Å¸â€œÅ“ Ã Â¸â€ºÃ Â¸Â£Ã Â¸Â°Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸Â´Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸ÂÃ Â¹Ë†Ã Â¸Â­Ã Â¸â„¢Ã Â¸Â«Ã Â¸â„¢Ã Â¹â€°Ã Â¸Â²</label>
+                        <div class="bg-blue-50 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto text-sm">
+                            <div v-for="(ship, idx) in selectedShipmentOrder.shipments" :key="idx"
+                                class="flex justify-between items-center py-1 border-b border-blue-100 last:border-0">
+                                <span class="font-medium text-blue-700">Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡ {{ idx + 1 }} - {{ formatDateThai(ship.date)
+                                    }}</span>
+                                <button @click="printShipmentNote(selectedShipmentOrder, idx)"
+                                    class="text-indigo-600 hover:text-indigo-800 text-xs">Ã°Å¸â€“Â¨Ã¯Â¸Â Ã Â¸Å¾Ã Â¸Â´Ã Â¸Â¡Ã Â¸Å¾Ã Â¹Å’Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between space-x-3 p-6 border-t">
+                    <button @click="showShipmentModal = false" class="btn-secondary">Ã Â¸Â¢Ã Â¸ÂÃ Â¹â‚¬Ã Â¸Â¥Ã Â¸Â´Ã Â¸Â</button>
+                    <div class="flex space-x-2">
+                        <button @click="saveShipment" class="btn-success">Ã°Å¸â€™Â¾ Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸ÂÃ Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°</button>
+                        <button @click="saveAndPrintShipment" class="btn-primary">Ã°Å¸â€“Â¨Ã¯Â¸Â Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸Â & Ã Â¸Å¾Ã Â¸Â´Ã Â¸Â¡Ã Â¸Å¾Ã Â¹Å’Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div v-if="toast.show" class="fixed bottom-6 right-6 z-50">
+            <div :class="toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'"
+                class="text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3">
+                <span class="text-2xl">{{ toast.type === 'success' ? 'Ã¢Å“â€¦' : 'Ã¢ÂÅ’' }}</span>
+                <span class="font-medium">{{ toast.message }}</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue
+
+        createApp({
+            setup() {
+                // State
+                const activeTab = ref('bom')
+                const products = ref([])
+                const orders = ref([])
+                const receiveHistory = ref([])
+
+                // New Product Form
+                const newProduct = ref({ code: '', name: '', unit: '' })
+
+                // BOM Form
+                const selectedProductForBom = ref('')
+                const newMaterial = ref({ name: '', qty: 0, unit: '' })
+
+                // Order Form
+                const newOrder = ref({ orderNo: '', productId: '', qty: 0, subcontractor: '', dueDate: '' })
+                const calculatedMaterials = ref([])
+
+                // Receive Modal
+                const showReceiveModal = ref(false)
+                const selectedOrder = ref(null)
+                const receiveQty = ref(0)
+
+                // Edit Material Modal
+                const showEditMaterialModal = ref(false)
+                const editingMaterial = ref({ productId: '', idx: -1, name: '', qty: 0, unit: '' })
+
+                // Delivery Note Modal
+                const showDeliveryNoteModal = ref(false)
+                const selectedDeliveryOrder = ref(null)
+
+                // Order Detail Modal
+                const showOrderDetailModal = ref(false)
+                const selectedOrderDetail = ref(null)
+                const newDeliveryPlan = ref({ plannedDate: '', plannedQty: 0, note: '' })
+
+                // Shipment Modal (Ã Â¹ÂÃ Â¸Å¡Ã Â¹Ë†Ã Â¸â€¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¥Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡)
+                const showShipmentModal = ref(false)
+                const selectedShipmentOrder = ref(null)
+                const newShipment = ref({ date: '', materials: [] })
+
+                // Sheet Summary Modal
+                const showSheetModal = ref(false)
+                const sheetData = ref([])
+                const sheetSummary = ref([])
+                const sheetLoading = ref(false)
+                const sheetError = ref('')
+                const sheetFilter = ref('all')
+                const sheetLastUpdated = ref('')
+                const dateFrom = ref('')
+                const dateTo = ref('')
+                const filteredRawData = ref([])
+
+                // Product names from Sheet for dropdown
+                const sheetProductNames = ref([])
+                const selectedSheetProduct = ref('')
+
+                // BOM base quantity
+                const bomBaseQty = ref(1000)
+
+                // Pieces per box configuration (stored in LocalStorage)
+                const piecesPerBoxMap = ref(JSON.parse(localStorage.getItem('subcontracting_piecesPerBox') || '{}'))
+
+                // Toast
+                const toast = ref({ show: false, message: '', type: 'success' })
+
+                // Google Sheet Configuration (Ã Â¸ÂªÃ Â¸Â³Ã Â¸Â«Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€Ã Â¸Â¶Ã Â¸â€¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²)
+                const SHEET_ID = '1PTXUxu_vJW7EXEp5k11W-bgogDAYY5tSGl2YhYRvuv4'
+                const SHEET_GID = '0'
+
+                // Database URL (Apps Script)
+                const DB_URL = 'https://script.google.com/macros/s/AKfycbw9OToWNr3B9iOBLDRjnMw6_O7rt8fmvdb_i24iwLVHzq8Odg9k0bC1GTG6uxTFNzJDcw/exec'
+                const dbSyncing = ref(false)
+
+                // Computed
+                const productsWithBom = computed(() => products.value.filter(p => p.bom && p.bom.length > 0))
+                const totalOutstanding = computed(() => orders.value.reduce((sum, o) => sum + (o.outstandingQty || 0), 0))
+
+                const filteredSheetSummary = computed(() => {
+                    if (sheetFilter.value === 'all') {
+                        return sheetSummary.value
+                    }
+                    return sheetSummary.value.filter(item => item.vendor === sheetFilter.value)
+                })
+
+                // Methods
+                const showToast = (message, type = 'success') => {
+                    toast.value = { show: true, message, type }
+                    setTimeout(() => toast.value.show = false, 3000)
+                }
+
+                const saveToStorage = () => {
+                    localStorage.setItem('subcontracting_products', JSON.stringify(products.value))
+                    localStorage.setItem('subcontracting_orders', JSON.stringify(orders.value))
+                    localStorage.setItem('subcontracting_history', JSON.stringify(receiveHistory.value))
+                    // Auto sync to database
+                    autoSyncToDatabase()
+                }
+
+                // Debounced auto sync (Ã Â¸â€ºÃ Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â±Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£ sync Ã Â¸â€“Ã Â¸ÂµÃ Â¹Ë†Ã Â¹â‚¬Ã Â¸ÂÃ Â¸Â´Ã Â¸â„¢Ã Â¹â€žÃ Â¸â€º)
+                let syncTimeout = null
+                const autoSyncToDatabase = () => {
+                    if (syncTimeout) clearTimeout(syncTimeout)
+                    syncTimeout = setTimeout(() => {
+                        syncToDatabase()
+                    }, 2000) // Ã Â¸Â£Ã Â¸Â­ 2 Ã Â¸Â§Ã Â¸Â´Ã Â¸â„¢Ã Â¸Â²Ã Â¸â€”Ã Â¸ÂµÃ Â¸Â«Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¹â‚¬Ã Â¸â€ºÃ Â¸Â¥Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â¢Ã Â¸â„¢Ã Â¹ÂÃ Â¸â€ºÃ Â¸Â¥Ã Â¸â€¡Ã Â¸â€žÃ Â¸Â£Ã Â¸Â±Ã Â¹â€°Ã Â¸â€¡Ã Â¸ÂªÃ Â¸Â¸Ã Â¸â€Ã Â¸â€”Ã Â¹â€°Ã Â¸Â²Ã Â¸Â¢
+                }
+
+                const loadFromStorage = () => {
+                    const savedProducts = localStorage.getItem('subcontracting_products')
+                    const savedOrders = localStorage.getItem('subcontracting_orders')
+                    const savedHistory = localStorage.getItem('subcontracting_history')
+                    if (savedProducts) products.value = JSON.parse(savedProducts)
+                    if (savedOrders) orders.value = JSON.parse(savedOrders)
+                    if (savedHistory) receiveHistory.value = JSON.parse(savedHistory)
+                }
+
+                // Database Sync Functions
+                const syncToDatabase = async () => {
+                    if (dbSyncing.value) return
+                    if (products.value.length === 0 && orders.value.length === 0) return
+
+                    dbSyncing.value = true
+
+                    try {
+                        const callbackName = 'syncCallback_' + Date.now()
+                        const data = encodeURIComponent(JSON.stringify({
+                            products: products.value,
+                            orders: orders.value
+                        }))
+                        const url = `${DB_URL}?action=syncAll&data=${data}&callback=${callbackName}`
+
+                        const syncPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => {
+                                delete window[callbackName]
+                                reject(new Error('Timeout'))
+                            }, 15000)
+
+                            window[callbackName] = (response) => {
+                                clearTimeout(timeout)
+                                delete window[callbackName]
+                                resolve(response)
+                            }
+                        })
+
+                        const script = document.createElement('script')
+                        script.src = url
+                        script.onerror = () => {
+                            dbSyncing.value = false
+                        }
+                        document.body.appendChild(script)
+
+                        const response = await syncPromise
+                        document.body.removeChild(script)
+
+                        if (response && response.success) {
+                            console.log('Synced to database:', response)
+                        }
+                    } catch (error) {
+                        console.error('Database sync error:', error)
+                    } finally {
+                        dbSyncing.value = false
+                    }
+                }
+
+                const loadFromDatabase = async () => {
+                    try {
+                        const callbackName = 'dbCallback_' + Date.now()
+                        const url = `${DB_URL}?action=getAll&callback=${callbackName}`
+
+                        const dataPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => reject(new Error('Timeout')), 15000)
+                            window[callbackName] = (response) => {
+                                clearTimeout(timeout)
+                                delete window[callbackName]
+                                resolve(response)
+                            }
+                        })
+
+                        const script = document.createElement('script')
+                        script.src = url
+                        document.body.appendChild(script)
+
+                        const response = await dataPromise
+                        document.body.removeChild(script)
+
+                        if (response && !response.error) {
+                            if (response.products && response.products.length > 0) {
+                                products.value = response.products
+                            }
+                            if (response.orders && response.orders.length > 0) {
+                                orders.value = response.orders
+                            }
+                            saveToStorage()
+                            showToast('Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸Ë†Ã Â¸Â²Ã Â¸ÂÃ Â¸ÂÃ Â¸Â²Ã Â¸â„¢Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                        }
+                    } catch (error) {
+                        console.log('Database load failed, using local storage:', error)
+                    }
+                }
+
+                const saveAndSync = () => {
+                    saveToStorage()
+                    syncToDatabase()
+                }
+
+                // Force load from database (replace local data)
+                const forceLoadFromDatabase = async () => {
+                    if (dbSyncing.value) return
+                    dbSyncing.value = true
+
+                    try {
+                        const callbackName = 'loadCallback_' + Date.now()
+                        const url = `${DB_URL}?action=getAll&callback=${callbackName}`
+
+                        const dataPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => {
+                                delete window[callbackName]
+                                reject(new Error('Timeout'))
+                            }, 15000)
+
+                            window[callbackName] = (response) => {
+                                clearTimeout(timeout)
+                                delete window[callbackName]
+                                resolve(response)
+                            }
+                        })
+
+                        const script = document.createElement('script')
+                        script.src = url
+                        document.body.appendChild(script)
+
+                        const response = await dataPromise
+                        document.body.removeChild(script)
+
+                        if (response && !response.error) {
+                            // Force replace data
+                            products.value = response.products || []
+                            orders.value = response.orders || []
+
+                            // Deduplicate
+                            deduplicateData()
+                            saveToStorage()
+                            showToast(`Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†! Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²: ${products.value.length}, Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡: ${orders.value.length}`)
+                        } else {
+                            showToast('Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†', 'error')
+                        }
+                    } catch (error) {
+                        console.error('Force load failed:', error)
+                        showToast('Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†', 'error')
+                    } finally {
+                        dbSyncing.value = false
+                    }
+                }
+
+                const addProduct = () => {
+                    if (!newProduct.value.code || !newProduct.value.name) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Â£Ã Â¸Â«Ã Â¸Â±Ã Â¸ÂªÃ Â¹ÂÃ Â¸Â¥Ã Â¸Â°Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²', 'error')
+                        return
+                    }
+                    products.value.push({
+                        id: Date.now().toString(),
+                        code: newProduct.value.code,
+                        name: newProduct.value.name,
+                        unit: newProduct.value.unit || 'Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢',
+                        bom: []
+                    })
+                    newProduct.value = { code: '', name: '', unit: '' }
+                    saveToStorage()
+                    showToast('Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                }
+
+                const deleteProduct = (id) => {
+                    if (confirm('Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Â¥Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°?')) {
+                        products.value = products.value.filter(p => p.id !== id)
+                        saveToStorage()
+                        showToast('Ã Â¸Â¥Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                    }
+                }
+
+                const addProductFromSheet = () => {
+                    if (!selectedSheetProduct.value) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Dropdown', 'error')
+                        return
+                    }
+                    // Check if product already exists
+                    const exists = products.value.find(p => p.name === selectedSheetProduct.value)
+                    if (exists) {
+                        showToast('Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°Ã Â¸Â¡Ã Â¸ÂµÃ Â¸Â­Ã Â¸Â¢Ã Â¸Â¹Ã Â¹Ë†Ã Â¹ÂÃ Â¸Â¥Ã Â¹â€°Ã Â¸Â§Ã Â¹Æ’Ã Â¸â„¢Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Å¡', 'error')
+                        return
+                    }
+                    // Auto-generate code
+                    const code = selectedSheetProduct.value.substring(0, 3).toUpperCase().replace(/\s/g, '') + '_' + Date.now().toString().slice(-4)
+                    products.value.push({
+                        id: Date.now().toString(),
+                        code: code,
+                        name: selectedSheetProduct.value,
+                        unit: 'Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡',
+                        bom: []
+                    })
+                    selectedSheetProduct.value = ''
+                    newProduct.value = { code: '', name: '', unit: '' }
+                    saveToStorage()
+                    showToast('Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                }
+
+                const addMaterialToBom = () => {
+                    if (!selectedProductForBom.value) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²', 'error')
+                        return
+                    }
+                    if (!newMaterial.value.name) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡', 'error')
+                        return
+                    }
+                    if (!newMaterial.value.qty || newMaterial.value.qty <= 0) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡', 'error')
+                        return
+                    }
+                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    if (product) {
+                        // Save base quantity to product
+                        product.baseQty = bomBaseQty.value || 1000
+                        product.bom.push({
+                            name: newMaterial.value.name,
+                            qty: newMaterial.value.qty,
+                            unit: newMaterial.value.unit || 'Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢'
+                        })
+                        newMaterial.value = { name: '', qty: 0, unit: '' }
+                        saveToStorage()
+                        showToast('Ã Â¹â‚¬Ã Â¸Å¾Ã Â¸Â´Ã Â¹Ë†Ã Â¸Â¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¹Æ’Ã Â¸â„¢ BOM Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                    }
+                }
+
+                const removeMaterialFromBom = (productId, idx) => {
+                    const product = products.value.find(p => p.id === productId)
+                    if (product && product.bom) {
+                        product.bom.splice(idx, 1)
+                        saveToStorage()
+                        showToast('Ã Â¸Â¥Ã Â¸Å¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                    }
+                }
+
+                const updateSelectedProductBaseQty = () => {
+                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    if (product && product.baseQty) {
+                        bomBaseQty.value = product.baseQty
+                    } else {
+                        bomBaseQty.value = 1000
+                    }
+                }
+
+                // Edit Material Functions
+                const openEditMaterialModal = (productId, idx, mat) => {
+                    editingMaterial.value = {
+                        productId: productId,
+                        idx: idx,
+                        name: mat.name,
+                        qty: mat.qty,
+                        unit: mat.unit
+                    }
+                    showEditMaterialModal.value = true
+                }
+
+                const saveEditMaterial = () => {
+                    const product = products.value.find(p => p.id === editingMaterial.value.productId)
+                    if (product && product.bom && product.bom[editingMaterial.value.idx]) {
+                        product.bom[editingMaterial.value.idx] = {
+                            name: editingMaterial.value.name,
+                            qty: editingMaterial.value.qty,
+                            unit: editingMaterial.value.unit
+                        }
+                        saveToStorage()
+                        showEditMaterialModal.value = false
+                        showToast('Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€šÃ Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                    }
+                }
+
+                const editProductBaseQty = (product) => {
+                    const newQty = prompt('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸â„¢Ã Â¹Æ’Ã Â¸Â«Ã Â¸Â¡Ã Â¹Ë†:', product.baseQty || 1000)
+                    if (newQty && !isNaN(newQty)) {
+                        product.baseQty = parseInt(newQty)
+                        saveToStorage()
+                        showToast(`Ã Â¸Â­Ã Â¸Â±Ã Â¸Å¾Ã Â¹â‚¬Ã Â¸â€Ã Â¸â€”Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂÃ Â¸Â²Ã Â¸â„¢Ã Â¹â‚¬Ã Â¸â€ºÃ Â¹â€¡Ã Â¸â„¢ ${parseInt(newQty).toLocaleString()} Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢`)
+                    }
+                }
+
+                // Load product names from Google Sheet
+                const loadProductNamesFromSheet = async () => {
+                    showToast('Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸Â£Ã Â¸Â²Ã Â¸Â¢Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²...', 'info')
+                    try {
+                        const callbackName = 'sheetProductCallback_' + Date.now()
+                        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
+
+                        const dataPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => reject(new Error('Timeout')), 15000)
+                            window[callbackName] = (response) => {
+                                clearTimeout(timeout)
+                                delete window[callbackName]
+                                resolve(response)
+                            }
+                        })
+
+                        const script = document.createElement('script')
+                        script.src = url
+                        document.body.appendChild(script)
+
+                        const response = await dataPromise
+                        document.body.removeChild(script)
+
+                        if (response && response.table) {
+                            const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
+                            const productNameIdx = headers.findIndex(h => h.includes('Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²') || h === 'col_1')
+
+                            const names = new Set()
+                            response.table.rows.forEach(row => {
+                                if (row.c && row.c[productNameIdx]) {
+                                    const name = row.c[productNameIdx].v || row.c[productNameIdx].f || ''
+                                    if (name && name.trim()) {
+                                        names.add(name.trim())
+                                    }
+                                }
+                            })
+
+                            sheetProductNames.value = Array.from(names).sort()
+                            showToast(`Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†! Ã Â¸Å¾Ã Â¸Å¡ ${sheetProductNames.value.length} Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²`)
+                        }
+                    } catch (error) {
+                        showToast('Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸ÂªÃ Â¸Â²Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â£Ã Â¸â€“Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹â€žÃ Â¸â€Ã Â¹â€°: ' + error.message, 'error')
+                    }
+                }
+
+                const onSelectSheetProduct = () => {
+                    if (selectedSheetProduct.value) {
+                        newProduct.value.name = selectedSheetProduct.value
+                        // Auto-generate code from product name
+                        const code = selectedSheetProduct.value.substring(0, 2).toUpperCase() + '_' + Date.now().toString().slice(-4)
+                        newProduct.value.code = code
+                    }
+                }
+
+                const calculateMaterials = () => {
+                    if (!newOrder.value.productId || newOrder.value.qty <= 0) {
+                        calculatedMaterials.value = []
+                        return
+                    }
+                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    if (product && product.bom) {
+                        const baseQty = product.baseQty || 1000
+                        const ratio = newOrder.value.qty / baseQty
+                        calculatedMaterials.value = product.bom.map(mat => ({
+                            name: mat.name,
+                            totalQty: Math.round(mat.qty * ratio * 100) / 100, // Round to 2 decimal
+                            unit: mat.unit
+                        }))
+                    }
+                }
+
+                // Auto-generate order number
+                const generateOrderNo = () => {
+                    const year = new Date().getFullYear()
+                    const prefix = `JO-${year}`
+
+                    // Ã Â¸Â«Ã Â¸Â²Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸Â¥Ã Â¹Ë†Ã Â¸Â²Ã Â¸ÂªÃ Â¸Â¸Ã Â¸â€Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â orders Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â¡Ã Â¸ÂµÃ Â¸Â­Ã Â¸Â¢Ã Â¸Â¹Ã Â¹Ë†
+                    let maxNum = 0
+                    orders.value.forEach(o => {
+                        if (o.orderNo && o.orderNo.startsWith(prefix)) {
+                            const numPart = parseInt(o.orderNo.replace(prefix, ''), 10)
+                            if (!isNaN(numPart) && numPart > maxNum) {
+                                maxNum = numPart
+                            }
+                        }
+                    })
+
+                    return `${prefix}${String(maxNum + 1).padStart(3, '0')}`
+                }
+
+                // Watch for product selection to auto-generate order number
+                watch(() => newOrder.value.productId, (newVal) => {
+                    if (newVal && !newOrder.value.orderNo) {
+                        newOrder.value.orderNo = generateOrderNo()
+                    }
+                    calculateMaterials()
+                })
+
+                const createJobOrder = () => {
+                    if (!newOrder.value.orderNo || !newOrder.value.productId || newOrder.value.qty <= 0) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹Æ’Ã Â¸Â«Ã Â¹â€°Ã Â¸â€žÃ Â¸Â£Ã Â¸Å¡', 'error')
+                        return
+                    }
+                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    orders.value.push({
+                        id: Date.now().toString(),
+                        orderNo: newOrder.value.orderNo,
+                        productId: newOrder.value.productId,
+                        productName: product.name,
+                        productUnit: product.unit,
+                        qty: newOrder.value.qty,
+                        receivedQty: 0,
+                        outstandingQty: newOrder.value.qty,
+                        subcontractor: newOrder.value.subcontractor,
+                        dueDate: newOrder.value.dueDate,
+                        materials: calculatedMaterials.value,
+                        status: 'in_progress',
+                        createdAt: new Date().toISOString()
+                    })
+                    newOrder.value = { orderNo: '', productId: '', qty: 0, subcontractor: '', dueDate: '' }
+                    calculatedMaterials.value = []
+                    saveToStorage()
+                    showToast('Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢Ã Â¹ÂÃ Â¸Â¥Ã Â¸Â°Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                }
+
+                // Delete Order
+                const deleteOrder = (orderId) => {
+                    if (confirm('Ã Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸Â¥Ã Â¸Å¡Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢Ã Â¸â„¢Ã Â¸ÂµÃ Â¹â€°?')) {
+                        const idx = orders.value.findIndex(o => o.id === orderId)
+                        if (idx !== -1) {
+                            orders.value.splice(idx, 1)
+                            saveToStorage()
+                            showToast('Ã Â¸Â¥Ã Â¸Å¡Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                        }
+                    }
+                }
+
+                // Edit Order Modal
+                const showEditOrderModal = ref(false)
+                const editingOrder = ref(null)
+
+                const openEditOrder = (order) => {
+                    editingOrder.value = { ...order }
+                    showEditOrderModal.value = true
+                }
+
+                const saveEditOrder = () => {
+                    const idx = orders.value.findIndex(o => o.id === editingOrder.value.id)
+                    if (idx !== -1) {
+                        // Update outstanding qty based on new qty
+                        editingOrder.value.outstandingQty = editingOrder.value.qty - (editingOrder.value.receivedQty || 0)
+                        orders.value[idx] = { ...editingOrder.value }
+                        saveToStorage()
+                        showToast('Ã Â¹ÂÃ Â¸ÂÃ Â¹â€°Ã Â¹â€žÃ Â¸â€šÃ Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!')
+                    }
+                    showEditOrderModal.value = false
+                }
+
+                // Shipment Functions (Ã Â¹ÂÃ Â¸Å¡Ã Â¹Ë†Ã Â¸â€¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Â«Ã Â¸Â¥Ã Â¸Â²Ã Â¸Â¢Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡)
+                const openShipmentModal = (order) => {
+                    selectedShipmentOrder.value = order
+
+                    // Calculate remaining materials
+                    const materials = order.materials || []
+                    const previousShipments = order.shipments || []
+
+                    newShipment.value = {
+                        date: new Date().toISOString().split('T')[0],
+                        materials: materials.map(mat => {
+                            // Calculate total shipped for this material
+                            let totalShipped = 0
+                            previousShipments.forEach(ship => {
+                                const shipMat = ship.materials?.find(m => m.name === mat.name)
+                                if (shipMat) totalShipped += (shipMat.shipQty || 0)
+                            })
+
+                            const remaining = (mat.totalQty || 0) - totalShipped
+                            return {
+                                name: mat.name,
+                                unit: mat.unit,
+                                totalQty: mat.totalQty || 0,
+                                remaining: remaining > 0 ? remaining : 0,
+                                shipQty: remaining > 0 ? remaining : 0
+                            }
+                        })
+                    }
+                    showShipmentModal.value = true
+                }
+
+                const saveShipment = () => {
+                    if (!newShipment.value.date) {
+                        showToast('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸Â·Ã Â¸Â­Ã Â¸ÂÃ Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡', 'error')
+                        return
+                    }
+
+                    const order = selectedShipmentOrder.value
+                    const idx = orders.value.findIndex(o => o.id === order.id)
+                    if (idx === -1) return
+
+                    // Initialize shipments array if not exists
+                    if (!orders.value[idx].shipments) {
+                        orders.value[idx].shipments = []
+                    }
+
+                    // Add new shipment
+                    const shipment = {
+                        id: Date.now().toString(),
+                        date: newShipment.value.date,
+                        materials: newShipment.value.materials.filter(m => m.shipQty > 0).map(m => ({
+                            name: m.name,
+                            unit: m.unit,
+                            shipQty: m.shipQty
+                        })),
+                        createdAt: new Date().toISOString()
+                    }
+
+                    orders.value[idx].shipments.push(shipment)
+                    saveToStorage()
+
+                    // Update selectedShipmentOrder to reflect changes
+                    selectedShipmentOrder.value = orders.value[idx]
+
+                    showToast(`Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸ÂÃ Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡ ${orders.value[idx].shipments.length} Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!`)
+
+                    // Recalculate remaining
+                    openShipmentModal(orders.value[idx])
+                }
+
+                const saveAndPrintShipment = async () => {
+                    saveShipment()
+                    // Print the latest shipment
+                    const order = selectedShipmentOrder.value
+                    const shipmentIdx = (order.shipments?.length || 1) - 1
+                    await printShipmentNote(order, shipmentIdx)
+                }
+
+                const printShipmentNote = (order, shipmentIdx) => {
+                    const shipment = order.shipments?.[shipmentIdx]
+                    if (!shipment) {
+                        showToast('Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Å¾Ã Â¸Å¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸ÂÃ Â¸Â²Ã Â¸Â£Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡', 'error')
+                        return
+                    }
+
+                    const printWindow = window.open('', '_blank')
+                    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ - ${order.orderNo} (Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡ ${shipmentIdx + 1})</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: #0d9488; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .info-item { padding: 8px; background: #f3f4f6; border-radius: 4px; }
+        .info-label { font-size: 12px; color: #6b7280; }
+        .info-value { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #0d9488; color: white; }
+        .round-badge { display: inline-block; padding: 4px 12px; background: #0d9488; color: white; border-radius: 9999px; font-weight: bold; }
+        .footer { margin-top: 40px; display: flex; justify-content: space-between; }
+        .signature { text-align: center; width: 200px; }
+        .signature-line { border-top: 1px solid #000; margin-top: 60px; padding-top: 8px; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Ã°Å¸â€œÂ¦ Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡</h1>
+        <p><span class="round-badge">Ã Â¸Â£Ã Â¸Â­Ã Â¸Å¡Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë† ${shipmentIdx + 1}</span></p>
+    </div>
+    
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Ã Â¹â‚¬Ã Â¸Â¥Ã Â¸â€šÃ Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â´Ã Â¸â€¢</div>
+            <div class="info-value">${order.orderNo}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸Ë†Ã Â¸Â£Ã Â¸Â´Ã Â¸â€¡</div>
+            <div class="info-value">${formatDateThai(shipment.date)}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²</div>
+            <div class="info-value">${order.productName}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸Ë†Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡</div>
+            <div class="info-value">${order.subcontractor}</div>
+        </div>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Ã Â¸Â§Ã Â¸Â±Ã Â¸â€¢Ã Â¸â€“Ã Â¸Â¸Ã Â¸â€Ã Â¸Â´Ã Â¸Å¡</th>
+                <th style="text-align: right;">Ã Â¸Ë†Ã Â¸Â³Ã Â¸â„¢Ã Â¸Â§Ã Â¸â„¢Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</th>
+                <th>Ã Â¸Â«Ã Â¸â„¢Ã Â¹Ë†Ã Â¸Â§Ã Â¸Â¢</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${shipment.materials.map((mat, i) => `
+            <tr>
+                <td>${i + 1}</td>
+                <td>${mat.name}</td>
+                <td style="text-align: right; font-weight: bold;">${mat.shipQty?.toLocaleString()}</td>
+                <td>${mat.unit}</td>
+            </tr>
+            `).join('')}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <div class="signature">
+            <div class="signature-line">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡</div>
+        </div>
+        <div class="signature">
+            <div class="signature-line">Ã Â¸Å“Ã Â¸Â¹Ã Â¹â€°Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡</div>
+        </div>
+    </div>
+    
+    <script>window.onload = () => window.print()</script>
+</body>
+
+</html>`
+printWindow.document.write(html)
+printWindow.document.close()
+}
+
+const openReceiveModal = (order) => {
+selectedOrder.value = order
+receiveQty.value = 0
+showReceiveModal.value = true
+}
+
+const closeReceiveModal = () => {
+showReceiveModal.value = false
+selectedOrder.value = null
+}
+
+            const getTotalPlannedQty = () => {
+            if (!selectedOrderDetail.value?.deliveryPlans) return 0
+            return selectedOrderDetail.value.deliveryPlans.reduce((sum, p) => sum + (p.plannedQty || 0), 0)
+            }
+
+            const printDeliveryNote = () => {
+            const content = document.getElementById('delivery-note-content')
+            const printWindow = window.open('', '_blank')
+            printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+
+            <head>
+                <title>Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡ - ${selectedDeliveryOrder.value?.orderNo}</title>
+                <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap"
+                    rel="stylesheet">
+                <style>
+                    * {
+                        font-family: 'Prompt', sans-serif;
+                    }
+
+                    @page {
+                        size: A4;
+                        margin: 1cm;
+                    }
+
+                    body {
+                        padding: 20px;
+                    }
+                </style>
+            </head>
+
+            <body>${content.innerHTML}</body>
+
+            </html>`)
+            printWindow.document.close()
+            printWindow.onload = () => {
+            printWindow.print()
+            }
+            }
+
+            const exportDeliveryNotePDF = () => {
+            showToast('Ã Â¸ÂÃ Â¸Â³Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡Ã Â¸ÂªÃ Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡ PDF... Ã Â¸ÂÃ Â¸Â£Ã Â¸Â¸Ã Â¸â€œÃ Â¸Â²Ã Â¸Â£Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â±Ã Â¸ÂÃ Â¸â€žÃ Â¸Â£Ã Â¸Â¹Ã Â¹Ë†', 'info')
+            printDeliveryNote()
+            }
+
+
+            // Duplicate Product/BOM
+            const duplicateProduct = (product) => {
+            const newName = prompt('Ã Â¸ÂÃ Â¸Â£Ã Â¸Â­Ã Â¸ÂÃ Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²Ã Â¹Æ’Ã Â¸Â«Ã Â¸Â¡Ã Â¹Ë†:', product.name + ' (Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸â„¢Ã Â¸Â²)')
+            if (!newName) return
+
+            const newCode = newName.substring(0, 3).toUpperCase().replace(/\s/g, '') + '_' +
+            Date.now().toString().slice(-4)
+            const newProduct = {
+            id: Date.now().toString(),
+            code: newCode,
+            name: newName,
+            unit: product.unit,
+            baseQty: product.baseQty || 1000,
+            bom: product.bom.map(mat => ({ ...mat }))
+            }
+            products.value.push(newProduct)
+            saveToStorage()
+            showToast(`Ã Â¸â€žÃ Â¸Â±Ã Â¸â€Ã Â¸Â¥Ã Â¸Â­Ã Â¸Â BOM Ã Â¹â€žÃ Â¸â€ºÃ Â¸Â¢Ã Â¸Â±Ã Â¸â€¡ "${newName}" Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†!`)
+            }
+
+            // Sheet Modal Functions
+            const openSheetSummaryModal = () => {
+            showSheetModal.value = true
+            if (sheetData.value.length === 0) {
+            fetchSheetData()
+            }
+            }
+
+            const closeSheetModal = () => {
+            showSheetModal.value = false
+            }
+
+            const detectVendor = (remark) => {
+            if (!remark) return null
+            const remarkLower = remark.toLowerCase()
+            if (remarkLower.includes('Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢')) return 'Ã Â¸Ë†Ã Â¸Â¹Ã Â¸â„¢'
+            if (remarkLower.includes('cmi')) return 'CMI'
+            if (remarkLower.includes('Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹')) return 'Ã Â¸Å¡Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€ºÃ Â¸Â¹'
+            return null
+            }
+
+            const fetchSheetData = async () => {
+            sheetLoading.value = true
+            try {
+            const callbackName = 'googleSheetCallback_' + Date.now()
+            const url =
+            `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
+
+            const dataPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+            reject(new Error('Request timeout'))
+            }, 15000)
+
+            window[callbackName] = (response) => {
+            clearTimeout(timeout)
+            delete window[callbackName]
+            resolve(response)
+            }
+            })
+
+            // Inject script tag
+            const script = document.createElement('script')
+            script.src = url
+            script.onerror = () => {
+            sheetError.value = 'Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸ÂªÃ Â¸Â²Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â£Ã Â¸â€“Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Google Sheet Ã Â¹â€žÃ Â¸â€Ã Â¹â€°'
+            sheetLoading.value = false
+            }
+            document.body.appendChild(script)
+
+            // Wait for response
+            const response = await dataPromise
+            document.body.removeChild(script)
+
+            // Parse Google Visualization response
+            if (response && response.table) {
+            // Get headers, handle empty labels by using index
+            const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
+            console.log('Sheet Headers:', headers) // Debug log
+
+            const rows = response.table.rows.map(row => {
+            const obj = {}
+            row.c.forEach((cell, idx) => {
+            const key = headers[idx]
+            let value = ''
+            if (cell) {
+            // Handle formatted value (f) for dates
+            value = cell.f || cell.v || ''
+            }
+            obj[key] = value
+            // Also store by index for date column (column A = index 0)
+            if (idx === 0) {
+            obj['_dateValue'] = value
+            }
+            })
+            return obj
+            })
+
+            console.log('First row sample:', rows[0]) // Debug log
+            sheetData.value = rows
+            processSheetData(rows)
+            sheetLastUpdated.value = new Date().toLocaleString('th-TH')
+            } else {
+            sheetError.value = 'Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸â€“Ã Â¸Â¹Ã Â¸ÂÃ Â¸â€¢Ã Â¹â€°Ã Â¸Â­Ã Â¸â€¡'
+            }
+            sheetLoading.value = false
+            } catch (error) {
+            sheetError.value = 'Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸ÂªÃ Â¸Â²Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â£Ã Â¸â€“Ã Â¹â‚¬Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸Â¡Ã Â¸â€¢Ã Â¹Ë†Ã Â¸Â­ Google Sheet Ã Â¹â€žÃ Â¸â€Ã Â¹â€°: ' + (error.message || '')
+            sheetLoading.value = false
+            }
+            }
+
+            const processSheetData = (data) => {
+            const summary = {}
+
+            data.forEach(row => {
+            const remark = row['Ã Â¸Â«Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â¢Ã Â¹â‚¬Ã Â¸Â«Ã Â¸â€¢Ã Â¸Â¸'] || ''
+            const vendor = detectVendor(remark)
+
+            if (vendor) {
+            const productName = row['Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²'] || 'Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Â£Ã Â¸Â°Ã Â¸Å¡Ã Â¸Â¸'
+            const totalBoxes = parseInt(row['Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡(Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡)']) || 0
+            const totalFractions = parseInt(row['Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡(Ã Â¹â‚¬Ã Â¸Â¨Ã Â¸Â©)']) || 0
+
+            const key = `${productName}_${vendor}`
+
+            if (!summary[key]) {
+            summary[key] = {
+            productName,
+            vendor,
+            totalBoxes: 0,
+            totalFractions: 0,
+            count: 0
+            }
+            }
+
+            summary[key].totalBoxes += totalBoxes
+            summary[key].totalFractions += totalFractions
+            summary[key].count += 1
+            }
+            })
+
+            sheetSummary.value = Object.values(summary).sort((a, b) => {
+            if (a.vendor !== b.vendor) return a.vendor.localeCompare(b.vendor)
+            return b.totalBoxes - a.totalBoxes
+            })
+
+            // Auto-sync orders from sheet data
+            syncOrdersFromSheet(data)
+            }
+
+            // Sync received qty from Sheet based on JO number in remarks
+            const syncOrdersFromSheet = (data) => {
+            // Group data by JO number found in remarks
+            const orderReceipts = {}
+
+            data.forEach(row => {
+            const remark = row['Ã Â¸Â«Ã Â¸Â¡Ã Â¸Â²Ã Â¸Â¢Ã Â¹â‚¬Ã Â¸Â«Ã Â¸â€¢Ã Â¸Â¸'] || ''
+            // Scan for JO-XXXXXXX pattern in remark
+            const joMatch = remark.match(/JO-\d+/gi)
+
+            if (joMatch) {
+            joMatch.forEach(joNumber => {
+            const normalizedJO = joNumber.toUpperCase()
+            const totalBoxes = parseInt(row['Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡(Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡)']) || 0
+            const totalFractions = parseInt(row['Ã Â¸Å“Ã Â¸Â¥Ã Â¸Â£Ã Â¸Â§Ã Â¸Â¡(Ã Â¹â‚¬Ã Â¸Â¨Ã Â¸Â©)']) || 0
+            const productName = row['Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²'] || ''
+
+            if (!orderReceipts[normalizedJO]) {
+            orderReceipts[normalizedJO] = {
+            totalBoxes: 0,
+            totalFractions: 0,
+            records: []
+            }
+            }
+
+            orderReceipts[normalizedJO].totalBoxes += totalBoxes
+            orderReceipts[normalizedJO].totalFractions += totalFractions
+            orderReceipts[normalizedJO].records.push({
+            productName,
+            boxes: totalBoxes,
+            fractions: totalFractions,
+            remark
+            })
+            })
+            }
+            })
+
+            // Update orders with received qty from sheet
+            let updatedCount = 0
+            orders.value.forEach(order => {
+            const joData = orderReceipts[order.orderNo.toUpperCase()]
+            if (joData) {
+            // Calculate total received (boxes * piecesPerBox + fractions)
+            const piecesPerBox = getPiecesPerBox(order.productName)
+            const receivedFromSheet = (joData.totalBoxes * piecesPerBox) + joData.totalFractions
+
+            // Only update if sheet has more data
+            if (receivedFromSheet > 0) {
+            order.receivedQty = receivedFromSheet
+            order.outstandingQty = Math.max(0, order.qty - receivedFromSheet)
+            order.sheetRecords = joData.records
+
+            if (order.outstandingQty <= 0) { order.status='completed' } updatedCount++ } } }) if (updatedCount> 0) {
+                saveToStorage()
+                showToast(`Ã Â¸Â­Ã Â¸Â±Ã Â¸â€ºÃ Â¹â‚¬Ã Â¸â€Ã Â¸â€¢Ã Â¸Â¢Ã Â¸Â­Ã Â¸â€Ã Â¸Â£Ã Â¸Â±Ã Â¸Å¡Ã Â¸â€šÃ Â¸Â­Ã Â¸â€¡Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Sheet: ${updatedCount} Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡`, 'success')
+                }
+                }
+
+                const getSummaryByVendor = (vendor) => {
+                const items = sheetSummary.value.filter(item => item.vendor === vendor)
+                return {
+                totalBoxes: items.reduce((sum, item) => sum + item.totalBoxes, 0),
+                count: items.reduce((sum, item) => sum + item.count, 0)
+                }
+                }
+
+                // Pieces per box functions
+                const getPiecesPerBox = (productName) => {
+                return piecesPerBoxMap.value[productName] || 0
+                }
+
+                const setPiecesPerBox = (productName, value) => {
+                const numValue = parseInt(value) || 0
+                piecesPerBoxMap.value[productName] = numValue
+                // Save to LocalStorage
+                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                showToast(`Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸ÂÃ Â¹ÂÃ Â¸Â¥Ã Â¹â€°Ã Â¸Â§: ${productName} = ${numValue} Ã Â¸Å Ã Â¸Â´Ã Â¹â€°Ã Â¸â„¢/Ã Â¸Â¥Ã Â¸Â±Ã Â¸â€¡`)
+                }
+
+                const calculateTotalPieces = (item) => {
+                const piecesPerBox = piecesPerBoxMap.value[item.productName] || 0
+                const totalFromBoxes = item.totalBoxes * piecesPerBox
+                const totalPieces = totalFromBoxes + (item.totalFractions || 0)
+                return totalPieces.toLocaleString()
+                }
+
+                // Date filter functions
+                const parseDateThai = (dateStr) => {
+                if (!dateStr) return null
+                let date = null
+
+                // If already a Date object
+                if (dateStr instanceof Date) {
+                return dateStr
+                }
+
+                if (typeof dateStr === 'string') {
+                // Format 1: DD/MM/YYYY (Thai Buddhist year) e.g., "28/10/2567"
+                const thaiMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/)
+                if (thaiMatch) {
+                let year = parseInt(thaiMatch[3])
+                if (year > 2500) year -= 543 // Convert Buddhist year
+                date = new Date(year, parseInt(thaiMatch[2]) - 1, parseInt(thaiMatch[1]))
+                return date
+                }
+
+                // Format 2: YYYY-MM-DD e.g., "2024-10-28"
+                const isoMatch = dateStr.match(/(\d{4})-(\d{1,2})-(\d{1,2})/)
+                if (isoMatch) {
+                let year = parseInt(isoMatch[1])
+                if (year > 2500) year -= 543
+                date = new Date(year, parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]))
+                return date
+                }
+
+                // Format 3: Contains "Date(" from Google Sheets e.g., "Date(2024,9,28)"
+                const googleMatch = dateStr.match(/Date\((\d+),(\d+),(\d+)\)/)
+                if (googleMatch) {
+                date = new Date(parseInt(googleMatch[1]), parseInt(googleMatch[2]), parseInt(googleMatch[3]))
+                return date
+                }
+
+                // Try native parsing as fallback
+                const parsed = new Date(dateStr)
+                if (!isNaN(parsed.getTime())) {
+                return parsed
+                }
+                }
+
+                return null
+                }
+
+                const applyDateFilter = () => {
+                if (!dateFrom.value && !dateTo.value) {
+                // No date filter, show all
+                processSheetData(sheetData.value)
+                return
+                }
+
+                const fromDate = dateFrom.value ? new Date(dateFrom.value) : null
+                const toDate = dateTo.value ? new Date(dateTo.value) : null
+                if (toDate) toDate.setHours(23, 59, 59, 999)
+
+                console.log('Filtering dates from:', fromDate, 'to:', toDate) // Debug log
+
+                const filtered = sheetData.value.filter(row => {
+                // Use _dateValue which is column A (index 0)
+                const rowDateStr = row['_dateValue'] || row['Ã Â¸Â§Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Å¡Ã Â¸Â±Ã Â¸â„¢Ã Â¸â€”Ã Â¸Â¶Ã Â¸ÂÃ Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥'] || row['col_0'] || ''
+                const rowDate = parseDateThai(rowDateStr)
+
+                console.log('Row date string:', rowDateStr, '-> Parsed:', rowDate) // Debug log (first few)
+
+                if (!rowDate) return true // Include rows without dates
+
+                if (fromDate && rowDate < fromDate) return false if (toDate && rowDate> toDate) return false
+                    return true
+                    })
+
+                    console.log('Filtered rows:', filtered.length, 'of', sheetData.value.length) // Debug log
+                    processSheetData(filtered)
+                    }
+
+                    const setQuickDate = (type) => {
+                    const today = new Date()
+                    const formatDate = (d) => d.toISOString().split('T')[0]
+
+                    switch (type) {
+                    case 'today':
+                    dateFrom.value = formatDate(today)
+                    dateTo.value = formatDate(today)
+                    break
+                    case 'week':
+                    const weekAgo = new Date(today)
+                    weekAgo.setDate(today.getDate() - 7)
+                    dateFrom.value = formatDate(weekAgo)
+                    dateTo.value = formatDate(today)
+                    break
+                    case 'month':
+                    const monthAgo = new Date(today)
+                    monthAgo.setDate(today.getDate() - 30)
+                    dateFrom.value = formatDate(monthAgo)
+                    dateTo.value = formatDate(today)
+                    break
+                    case 'all':
+                    dateFrom.value = ''
+                    dateTo.value = ''
+                    break
+                    }
+                    applyDateFilter()
+                    }
+                    // Ã Â¸Â¥Ã Â¸Å¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³
+                    const deduplicateData = () => {
+                    // Deduplicate products by id
+                    const seenProducts = new Set()
+                    products.value = products.value.filter(p => {
+                    if (seenProducts.has(p.id)) {
+                    return false
+                    }
+                    seenProducts.add(p.id)
+                    return true
+                    })
+
+                    // Deduplicate orders by id AND orderNo
+                    const seenOrderIds = new Set()
+                    const seenOrderNos = new Set()
+                    orders.value = orders.value.filter(o => {
+                    // Ã Â¸Â¥Ã Â¸Å¡Ã Â¸â€“Ã Â¹â€°Ã Â¸Â² id Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³ Ã Â¸Â«Ã Â¸Â£Ã Â¸Â·Ã Â¸Â­ orderNo Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³
+                    if (seenOrderIds.has(o.id) || seenOrderNos.has(o.orderNo)) {
+                    return false
+                    }
+                    seenOrderIds.add(o.id)
+                    seenOrderNos.add(o.orderNo)
+                    return true
+                    })
+                    }
+
+                    // Ã Â¸â€ºÃ Â¸Â¸Ã Â¹Ë†Ã Â¸Â¡Ã Â¸Â¥Ã Â¹â€°Ã Â¸Â²Ã Â¸â€¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³
+                    const clearDuplicates = () => {
+                    const beforeProducts = products.value.length
+                    const beforeOrders = orders.value.length
+
+                    deduplicateData()
+                    saveToStorage()
+
+                    const removedProducts = beforeProducts - products.value.length
+                    const removedOrders = beforeOrders - orders.value.length
+
+                    if (removedProducts > 0 || removedOrders > 0) {
+                    showToast(`Ã Â¸Â¥Ã Â¸Å¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³Ã Â¸ÂªÃ Â¸Â³Ã Â¹â‚¬Ã Â¸Â£Ã Â¹â€¡Ã Â¸Ë†! Ã Â¸ÂªÃ Â¸Â´Ã Â¸â„¢Ã Â¸â€žÃ Â¹â€°Ã Â¸Â²: ${removedProducts}, Ã Â¹Æ’Ã Â¸Å¡Ã Â¸ÂªÃ Â¸Â±Ã Â¹Ë†Ã Â¸â€¡: ${removedOrders}`)
+                    } else {
+                    showToast('Ã Â¹â€žÃ Â¸Â¡Ã Â¹Ë†Ã Â¸Å¾Ã Â¸Å¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸â€¹Ã Â¹â€°Ã Â¸Â³')
+                    }
+                    }
+
+                    onMounted(async () => {
+                    // Ã Â¹â€šÃ Â¸Â«Ã Â¸Â¥Ã Â¸â€Ã Â¸Ë†Ã Â¸Â²Ã Â¸Â Database Ã Â¸Â­Ã Â¸Â¢Ã Â¹Ë†Ã Â¸Â²Ã Â¸â€¡Ã Â¹â‚¬Ã Â¸â€Ã Â¸ÂµÃ Â¸Â¢Ã Â¸Â§ (Google Sheet Ã Â¹â‚¬Ã Â¸â€ºÃ Â¹â€¡Ã Â¸â„¢Ã Â¹ÂÃ Â¸Â«Ã Â¸Â¥Ã Â¹Ë†Ã Â¸â€¡Ã Â¸â€šÃ Â¹â€°Ã Â¸Â­Ã Â¸Â¡Ã Â¸Â¹Ã Â¸Â¥Ã Â¸Â«Ã Â¸Â¥Ã Â¸Â±Ã Â¸Â)
+                    try {
+                    await forceLoadFromDatabase()
+                    } catch (e) {
+                    console.log('Initial load failed, trying localStorage fallback')
+                    loadFromStorage()
+                    }
+                    // Auto-load product names from Sheet
+                    loadProductNamesFromSheet()
+                    })
+
+                    return {
+                    activeTab, products, orders, receiveHistory,
+                    newProduct, selectedProductForBom, newMaterial,
+                    newOrder, calculatedMaterials, productsWithBom,
+                    showReceiveModal, selectedOrder, receiveQty,
+                    showEditMaterialModal, editingMaterial,
+                    showDeliveryNoteModal, selectedDeliveryOrder,
+                    toast, totalOutstanding, dbSyncing,
+                    showSheetModal, sheetData, sheetSummary, sheetLoading, sheetError,
+                    sheetFilter, sheetLastUpdated, filteredSheetSummary,
+                    dateFrom, dateTo, piecesPerBoxMap, bomBaseQty,
+                    sheetProductNames, selectedSheetProduct,
+                    addProduct, deleteProduct, addProductFromSheet, addMaterialToBom, removeMaterialFromBom,
+                    calculateMaterials, createJobOrder, updateSelectedProductBaseQty, generateOrderNo,
+                    openEditMaterialModal, saveEditMaterial, editProductBaseQty,
+                    openReceiveModal, closeReceiveModal, confirmReceive,
+                    openSheetSummaryModal, closeSheetModal, fetchSheetData,
+                    getSummaryByVendor, applyDateFilter, setQuickDate,
+                    getPiecesPerBox, setPiecesPerBox, calculateTotalPieces,
+                    loadProductNamesFromSheet, onSelectSheetProduct,
+                    openDeliveryNote, printDeliveryNote, exportDeliveryNotePDF,
+                    showOrderDetailModal, selectedOrderDetail, openOrderDetail,
+                    newDeliveryPlan, addDeliveryPlan, removeDeliveryPlan, getTotalPlannedQty,
+                    syncToDatabase, loadFromDatabase, saveAndSync, forceLoadFromDatabase,
+                    deleteOrder, showEditOrderModal, editingOrder, openEditOrder, saveEditOrder,
+                    showShipmentModal, selectedShipmentOrder, newShipment,
+                    openShipmentModal, saveShipment, saveAndPrintShipment, printShipmentNote,
+                    clearDuplicates, duplicateProduct, formatDate, formatDateThai
+                    }
+                    }
+                    }).mount('#app')
+                    </script>
+                    </body>
+
+                    </html>

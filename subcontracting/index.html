@@ -1,0 +1,1516 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดจ้างการผลิต | Subcontracting System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="glass shadow-lg sticky top-0 z-50">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between flex-wrap gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-2xl">
+                            🏭</div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">ระบบจัดจ้างการผลิต</h1>
+                            <p class="text-sm text-gray-500">Subcontracting Management System</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-wrap gap-2">
+                        <button @click="forceLoadFromDatabase"
+                            class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-200">🔄
+                            รีเฟรช</button>
+                        <button @click="showSheetModal = true"
+                            class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg">📊
+                            ดูยอดจาก Sheet</button>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">●
+                            ออนไลน์</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="container mx-auto px-4 mt-6">
+            <div class="glass rounded-2xl p-2 card-shadow inline-flex space-x-2 flex-wrap">
+                <button @click="activeTab = 'bom'"
+                    :class="activeTab === 'bom' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all">📦 จัดการ BOM</button>
+                <button @click="activeTab = 'order'"
+                    :class="activeTab === 'order' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all">📝 สั่งผลิต</button>
+                <button @click="activeTab = 'tracking'"
+                    :class="activeTab === 'tracking' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="px-6 py-3 rounded-xl font-medium transition-all">📊 ติดตามงาน</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6">
+            <!-- BOM Tab -->
+            <div v-show="activeTab === 'bom'" class="space-y-6">
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <!-- Create Product from Sheet -->
+                    <div class="glass rounded-2xl p-4 card-shadow">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">➕ สร้างสินค้า</h2>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">เลือกสินค้าจาก Sheet</label>
+                                <select @change="selectSheetProduct($event.target.value)"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                                    <option value="">-- เลือกจากรายการใน Sheet --</option>
+                                    <option v-for="name in sheetProductList" :key="name" :value="name">{{ name }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="border-t pt-3">
+                                <label class="block text-xs font-medium text-gray-500 mb-1">หรือพิมพ์เอง</label>
+                                <input v-model="newProduct.code" type="text"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                    placeholder="รหัสสินค้า">
+                            </div>
+                            <input v-model="newProduct.name" type="text"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                placeholder="ชื่อสินค้า">
+                            <div class="flex gap-2">
+                                <input v-model="newProduct.unit" type="text"
+                                    class="flex-1 min-w-0 px-3 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                    placeholder="หน่วย">
+                                <input v-model.number="newProduct.baseQty" type="number"
+                                    class="flex-1 min-w-0 px-3 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none"
+                                    placeholder="ฐาน BOM">
+                            </div>
+                            <button @click="addProduct"
+                                class="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:shadow-lg">💾
+                                บันทึกสินค้า</button>
+                        </div>
+                    </div>
+                    <!-- Add BOM (Multiple Materials) -->
+                    <div class="lg:col-span-2 glass rounded-2xl p-4 card-shadow">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">📋 กำหนด BOM</h2>
+                        <div class="space-y-4">
+                            <select v-model="selectedProductForBom"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                                <option value="">-- เลือกสินค้า --</option>
+                                <option v-for="p in products" :key="p.id" :value="p.id">{{ p.code }} - {{ p.name }}
+                                </option>
+                            </select>
+                            <!-- Dup BOM from another product -->
+                            <div class="flex gap-2">
+                                <select @change="dupBom($event.target.value); $event.target.value=''"
+                                    class="flex-1 px-3 py-2 border-2 border-orange-200 rounded-lg text-sm focus:border-orange-500 outline-none bg-orange-50">
+                                    <option value="">📋 ดึง BOM จากสินค้าอื่น...</option>
+                                    <option v-for="p in productsWithBom" :key="p.id" :value="p.id">{{ p.code }} - {{
+                                        p.name }} ({{ p.bom.length }} วัตถุดิบ)</option>
+                                </select>
+                            </div>
+                            <!-- Material Rows -->
+                            <div class="space-y-2 max-h-60 overflow-y-auto">
+                                <div v-for="(mat, idx) in bomMaterials" :key="idx" class="flex gap-2 items-center">
+                                    <span class="text-xs text-gray-400 w-6">{{ idx + 1 }}</span>
+                                    <input v-model="mat.name" type="text"
+                                        class="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
+                                        placeholder="ชื่อวัตถุดิบ">
+                                    <input v-model.number="mat.qty" type="number"
+                                        class="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm text-center"
+                                        placeholder="จำนวน">
+                                    <input v-model="mat.unit" type="text"
+                                        class="w-16 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
+                                        placeholder="หน่วย">
+                                    <button @click="bomMaterials.splice(idx, 1)"
+                                        class="text-red-400 hover:text-red-600 text-lg">✕</button>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="addBomRow"
+                                    class="flex-1 py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:border-indigo-400 hover:text-indigo-600 font-medium">➕
+                                    เพิ่มแถว</button>
+                                <button @click="saveBomMaterials"
+                                    class="flex-1 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium rounded-xl hover:shadow-lg">💾
+                                    บันทึก BOM ทั้งหมด</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Products List -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">📦 รายการสินค้าและ BOM</h2>
+                    <div v-if="products.length === 0" class="text-center py-12 text-gray-500">
+                        <p class="text-5xl mb-4">📭</p>
+                        <p>ยังไม่มีสินค้า กรุณาสร้างสินค้าใหม่</p>
+                    </div>
+                    <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="product in products" :key="product.id"
+                            class="border-2 border-gray-100 rounded-xl p-4 hover:border-indigo-300 bg-white">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-gray-800">{{ product.code }} - {{ product.name }}</h3>
+                                    <p class="text-xs text-gray-400">{{ product.unit }} | ฐาน: {{ (product.baseQty ||
+                                        1000).toLocaleString() }}</p>
+                                </div>
+                                <button @click="deleteProduct(product.id)"
+                                    class="text-red-400 hover:text-red-600">🗑️</button>
+                            </div>
+                            <div v-if="product.bom && product.bom.length > 0"
+                                class="bg-gray-50 rounded-lg p-2 space-y-1 text-sm">
+                                <div v-for="(mat, idx) in product.bom" :key="idx" class="flex justify-between">
+                                    <span>{{ mat.name }}</span>
+                                    <span class="font-medium text-indigo-600">{{ mat.qty }} {{ mat.unit }}</span>
+                                </div>
+                            </div>
+                            <p v-else class="text-xs text-amber-500">⚠️ ยังไม่มี BOM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Tab -->
+            <div v-show="activeTab === 'order'" class="space-y-6">
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">📝 สร้างใบสั่งจ้างผลิต</h2>
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">เลขที่ใบสั่งผลิต</label>
+                                <input :value="generateOrderNo()" type="text"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50" readonly>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">เลือกสินค้า</label>
+                                <select v-model="newOrder.productId" @change="calculateMaterials"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                                    <option value="">-- เลือกสินค้า --</option>
+                                    <option v-for="p in productsWithBom" :key="p.id" :value="p.id">{{ p.code }} - {{
+                                        p.name }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">จำนวนที่ต้องการผลิต</label>
+                                <input v-model.number="newOrder.qty" @input="calculateMaterials" type="number"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">ผู้รับจ้าง</label>
+                                <input v-model="newOrder.subcontractor" type="text"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                                    placeholder="ระบุชื่อผู้รับจ้าง">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">กำหนดส่ง</label>
+                                <input v-model="newOrder.dueDate" type="date"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+                            </div>
+                        </div>
+                        <!-- Calculated Materials -->
+                        <div
+                            class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-5 border-2 border-indigo-100">
+                            <h3 class="font-bold text-indigo-800 mb-4">📦 วัตถุดิบที่ต้องส่ง</h3>
+                            <div v-if="calculatedMaterials.length === 0" class="text-center py-8 text-gray-500">
+                                <p class="text-4xl mb-2">📊</p>
+                                <p class="text-sm">เลือกสินค้าและระบุจำนวนเพื่อคำนวณ</p>
+                            </div>
+                            <div v-else class="space-y-3">
+                                <div v-for="(mat, idx) in calculatedMaterials" :key="idx"
+                                    class="flex justify-between items-center py-3 border-b border-indigo-100">
+                                    <span class="text-gray-700 font-medium">{{ mat.name }}</span>
+                                    <div class="flex items-center space-x-2">
+                                        <span
+                                            class="w-24 px-3 py-1 bg-gray-50 border-2 border-gray-200 rounded-lg text-center font-bold text-indigo-700">{{
+                                            mat.totalQty?.toLocaleString() }}</span>
+                                        <span class="text-indigo-600 font-medium">{{ mat.unit }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button @click="createJobOrder"
+                            class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl hover:shadow-lg text-lg">✅
+                            ยืนยันส่งวัตถุดิบ / ออกใบส่งของ</button>
+                    </div>
+                </div>
+                <!-- Recent Orders -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+                        <h2 class="text-xl font-bold text-gray-800">📄 ใบส่งของล่าสุด</h2>
+                        <div class="flex items-center gap-2">
+                            <input v-model="combinedDate" type="date"
+                                class="px-3 py-1.5 border-2 border-gray-200 rounded-lg text-sm">
+                            <button @click="printCombinedDelivery"
+                                class="px-4 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm font-medium rounded-lg hover:shadow-md flex items-center gap-1">🖨️
+                                ใบส่งของรวม</button>
+                        </div>
+                    </div>
+                    <div v-if="orders.filter(o => o.status !== 'completed').length === 0"
+                        class="text-center py-8 text-gray-500">ยังไม่มีใบสั่งผลิต</div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">เลขที่</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">วันที่เปิด</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">วันที่ส่ง</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">สินค้า</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">ยอดสั่ง</th>
+                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-600">สถานะ</th>
+                                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-600">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders.filter(o => o.status !== 'completed').slice(0,5)"
+                                    :key="order.id" class="border-b hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-medium text-indigo-600">{{ order.orderNo }}</td>
+                                    <td class="px-4 py-3 text-xs text-gray-500">{{ formatDate(order.createdAt) }}</td>
+                                    <td class="px-4 py-3">
+                                        <div v-if="order.shipments && order.shipments.length" class="space-y-0.5">
+                                            <div v-for="(s, si) in order.shipments" :key="si"
+                                                class="text-xs text-gray-500">
+                                                รอบ{{ si + 1 }}: {{ formatDate(s.date) }}
+                                            </div>
+                                        </div>
+                                        <span v-else class="text-xs text-gray-400">-</span>
+                                    </td>
+                                    <td class="px-4 py-3">{{ order.productName }}</td>
+                                    <td class="px-4 py-3">{{ order.qty?.toLocaleString() }}</td>
+                                    <td class="px-4 py-3 cursor-pointer" @click="openShipmentModal(order)">
+                                        <div class="mb-1">
+                                            <span v-if="getMatShipStatus(order) === 'complete'"
+                                                class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded-full">📦
+                                                ส่งของครบ</span>
+                                            <span v-else-if="getMatShipStatus(order) === 'partial'"
+                                                class="inline-flex items-center gap-1 text-xs font-medium text-orange-700 bg-orange-100 px-2 py-1 rounded-full hover:bg-orange-200">⚠️
+                                                ส่งบางส่วน</span>
+                                            <span v-else
+                                                class="inline-flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full hover:bg-gray-200">⏳
+                                                ยังไม่ส่ง</span>
+                                        </div>
+                                        <div v-if="getMatSummary(order).length" class="space-y-0.5">
+                                            <div v-for="ms in getMatSummary(order)" :key="ms.name"
+                                                class="text-xs flex items-center gap-1 flex-wrap">
+                                                <span class="text-gray-500 truncate" style="max-width:80px;">{{ ms.name
+                                                    }}</span>
+                                                <span v-for="(rqty, ri) in ms.rounds" :key="ri"
+                                                    class="flex items-center">
+                                                    <span v-if="ri > 0" class="text-gray-300 mx-0.5">/</span>
+                                                    <span class="font-semibold"
+                                                        :class="ms.done ? 'text-green-600' : 'text-orange-600'">{{
+                                                        rqty.toLocaleString() }}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <button @click="openShipmentModal(order)"
+                                            class="text-teal-600 hover:text-teal-800 p-1" title="แบ่งส่งของ">🚚</button>
+                                        <button @click="openDeliveryNote(order)"
+                                            class="text-indigo-600 hover:text-indigo-800 p-1"
+                                            title="พิมพ์ใบส่งของ">🖨️</button>
+                                        <button @click="deleteOrder(order.id)"
+                                            class="text-red-500 hover:text-red-700 p-1" title="ลบ">🗑️</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Tab -->
+            <div v-show="activeTab === 'tracking'" class="space-y-6">
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800">📊 ติดตามงานจ้างผลิต</h2>
+                        <button @click="fetchSheetData"
+                            class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg">🔄
+                            อัปเดตจาก Sheet</button>
+                    </div>
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">รายการทั้งหมด</p>
+                            <p class="text-3xl font-bold">{{ orders.length }}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">กำลังผลิต</p>
+                            <p class="text-3xl font-bold">{{ orders.filter(o => o.status === 'in_progress').length }}
+                            </p>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">เสร็จสิ้น</p>
+                            <p class="text-3xl font-bold">{{ orders.filter(o => o.status === 'completed').length }}</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-xl p-4 text-white">
+                            <p class="text-sm opacity-80">ค้างรับ</p>
+                            <p class="text-3xl font-bold">{{ orders.reduce((sum, o) => sum + Math.max(0, (o.qty || 0) -
+                                getReceivedFromSheet(o.orderNo)), 0).toLocaleString() }}</p>
+                        </div>
+                    </div>
+                    <!-- Orders Table -->
+                    <div v-if="orders.length === 0" class="text-center py-12 text-gray-500">
+                        <p class="text-5xl mb-4">📭</p>
+                        <p>ยังไม่มีรายการจ้างผลิต</p>
+                    </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                                <tr>
+                                    <th class="px-4 py-4 text-left text-sm font-bold text-gray-700">เลขที่ใบสั่ง</th>
+                                    <th class="px-4 py-4 text-left text-sm font-bold text-gray-700">สินค้า</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">สั่งผลิต</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">รับแล้ว</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">ค้างรับ</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">สถานะ</th>
+                                    <th class="px-4 py-4 text-center text-sm font-bold text-gray-700">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="order in orders" :key="order.id" class="border-b hover:bg-indigo-50">
+                                    <td class="px-4 py-4">
+                                        <span class="font-bold text-indigo-600">{{ order.orderNo }}</span>
+                                        <p class="text-xs text-gray-500">{{ order.subcontractor }}</p>
+                                    </td>
+                                    <td class="px-4 py-4 font-medium">
+                                        {{ order.productName }}
+                                        <div v-if="getMismatchWarnings(order.orderNo, order.productName).length > 0"
+                                            class="mt-1">
+                                            <span
+                                                class="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                                                ⚠️ พบชื่อสินค้าไม่ตรง!
+                                            </span>
+                                            <div v-for="w in getMismatchWarnings(order.orderNo, order.productName)"
+                                                :key="w.rowNum" class="text-xs text-red-500 mt-0.5">
+                                                แถว {{ w.rowNum }}: "{{ w.sheetProduct }}"
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-center"><span
+                                            class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">{{
+                                            order.qty?.toLocaleString() }}</span></td>
+                                    <td class="px-4 py-4 text-center"><span
+                                            class="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">{{
+                                            getReceivedFromSheet(order.orderNo).toLocaleString()
+                                            }}</span></td>
+                                    <td class="px-4 py-4 text-center"><span
+                                            :class="(order.qty - getReceivedFromSheet(order.orderNo)) > 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'"
+                                            class="px-3 py-1 rounded-full font-bold">{{
+                                            Math.max(0, (order.qty || 0) -
+                                            getReceivedFromSheet(order.orderNo)).toLocaleString()
+                                            }}</span></td>
+                                    <td class="px-4 py-4 text-center">
+                                        <span v-if="order.status === 'completed'"
+                                            class="bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">✅
+                                            ครบแล้ว</span>
+                                        <span v-else
+                                            class="bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-medium">⏳
+                                            กำลังผลิต</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-center">
+                                        <button @click="openOrderDetail(order)"
+                                            class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg">🔍
+                                            ดูรายละเอียด</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Receive History -->
+                <div class="glass rounded-2xl p-6 card-shadow">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">📜 ประวัติการรับของ</h2>
+                    <div v-if="receiveHistory.length === 0" class="text-center py-8 text-gray-500">
+                        ยังไม่มีประวัติการรับของ</div>
+                    <div v-else class="space-y-3">
+                        <div v-for="(rec, idx) in receiveHistory.slice().reverse().slice(0,10)" :key="idx"
+                            class="bg-gray-50 rounded-lg p-4 flex justify-between items-center">
+                            <div>
+                                <p class="font-medium text-gray-800">{{ rec.orderNo }} - {{ rec.productName }}</p>
+                                <p class="text-sm text-gray-500">{{ formatDate(rec.receivedAt) }}</p>
+                            </div>
+                            <span class="bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold">+{{
+                                rec.qty?.toLocaleString() }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Shipment Modal (แบ่งส่งของหลายรอบ) -->
+        <div v-if="showShipmentModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-lg card-shadow">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">🚚 แบ่งส่งของ - {{ selectedShipmentOrder?.orderNo }}
+                </h3>
+                <div class="bg-indigo-50 p-4 rounded-xl mb-4">
+                    <p class="text-sm text-gray-600">สินค้า: <strong>{{ selectedShipmentOrder?.productName }}</strong>
+                    </p>
+                    <p class="text-sm text-gray-600">ยอดสั่งผลิต: <strong>{{
+                            selectedShipmentOrder?.qty?.toLocaleString() }}</strong> {{
+                        selectedShipmentOrder?.productUnit }}</p>
+                    <p class="text-sm text-gray-600">ส่งแล้ว: <strong class="text-green-600">{{
+                            getTotalShipped(selectedShipmentOrder)?.toLocaleString() }}</strong> {{
+                        selectedShipmentOrder?.productUnit }} ({{ getNextShipmentRound(selectedShipmentOrder) - 1 }}
+                        รอบ)</p>
+                    <p class="text-sm text-gray-600">คงเหลือ: <strong class="text-orange-600">{{
+                            getRemainingToShip(selectedShipmentOrder)?.toLocaleString() }}</strong> {{
+                        selectedShipmentOrder?.productUnit }}</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2"> รอบที่ {{
+                        getNextShipmentRound(selectedShipmentOrder) }} - วันที่ส่ง</label>
+                    <input v-model="newShipment.date" type="date"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
+                </div>
+                <!-- Materials for this shipment -->
+                <div v-if="newShipment.materials && newShipment.materials.length > 0" class="mb-4">
+                    <p class="text-sm font-medium text-gray-700 mb-2">📋 วัตถุดิบที่ส่งรอบนี้:</p>
+                    <div class="bg-amber-50 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto">
+                        <div v-for="(mat, idx) in newShipment.materials" :key="idx" class="flex items-center gap-2">
+                            <span class="flex-1 text-sm">{{ mat.name }}</span>
+                            <span class="text-xs text-gray-400">เหลือ {{ mat.remaining?.toLocaleString() }}</span>
+                            <input v-model.number="mat.sendQty" type="number" :max="mat.remaining"
+                                class="w-24 px-2 py-1 border-2 border-gray-200 rounded-lg text-sm text-center">
+                            <span class="text-xs text-gray-500 w-10">{{ mat.unit }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Previous Shipments -->
+                <div v-if="selectedShipmentOrder?.shipments?.length > 0" class="mb-4">
+                    <p class="text-sm font-medium text-gray-700 mb-2">ประวัติการส่ง:</p>
+                    <div class="bg-gray-50 rounded-lg p-3 space-y-3 max-h-60 overflow-y-auto">
+                        <div v-for="(ship, idx) in selectedShipmentOrder.shipments" :key="idx"
+                            class="bg-white rounded-lg p-2 border">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-indigo-600">รอบ {{ idx + 1 }} - {{
+                                    formatDate(ship.date) }}</span>
+                                <div class="flex gap-1">
+                                    <button @click="editShipmentRound(idx)"
+                                        class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded hover:bg-amber-200">✏️
+                                        แก้ไข</button>
+                                    <button @click="printDeliveryRound(selectedShipmentOrder, idx)"
+                                        class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-200">🖨️
+                                        พิมพ์</button>
+                                </div>
+                            </div>
+                            <!-- View mode -->
+                            <div v-if="editingRoundIdx !== idx" class="text-xs text-gray-600">
+                                <template v-if="ship.materials && ship.materials.length">
+                                    <span v-for="(m, mi) in ship.materials" :key="mi">
+                                        {{ m.name }} <strong>{{ (m.sendQty||0).toLocaleString() }}</strong>{{ mi <
+                                            ship.materials.length - 1 ? ', ' : '' }} </span>
+                                </template>
+                            </div>
+                            <!-- Edit mode -->
+                            <div v-else class="space-y-1 mt-2">
+                                <div v-for="(m, mi) in editingMaterials" :key="mi" class="flex items-center gap-2">
+                                    <span class="flex-1 text-xs">{{ m.name }}</span>
+                                    <input v-model.number="m.sendQty" type="number"
+                                        class="w-24 px-2 py-1 border-2 border-amber-300 rounded text-xs text-center bg-amber-50">
+                                    <span class="text-xs text-gray-400 w-8">{{ m.unit }}</span>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="editingRoundIdx = -1"
+                                        class="flex-1 text-xs bg-gray-200 py-1.5 rounded hover:bg-gray-300">ยกเลิก</button>
+                                    <button @click="saveShipmentEdit"
+                                        class="flex-1 text-xs bg-amber-500 text-white py-1.5 rounded hover:bg-amber-600">💾
+                                        บันทึกแก้ไข</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="showShipmentModal = false"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl">ยกเลิก</button>
+                    <button @click="confirmShipment"
+                        class="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-medium py-3 rounded-xl hover:shadow-lg">✅
+                        บันทึกการส่ง</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Detail Modal -->
+        <div v-if="showOrderDetailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto card-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">🔍 รายละเอียด - {{ selectedOrderDetail?.orderNo }}</h3>
+                    <button @click="showOrderDetailModal = false"
+                        class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-50 p-4 rounded-xl text-center">
+                        <p class="text-sm text-gray-500">สั่งผลิต</p>
+                        <p class="text-2xl font-bold text-blue-700">{{ selectedOrderDetail?.qty?.toLocaleString() }}</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-xl text-center">
+                        <p class="text-sm text-gray-500">รับแล้ว</p>
+                        <p class="text-2xl font-bold text-green-700">{{ (selectedOrderDetail?.receivedQty ||
+                            0).toLocaleString() }}</p>
+                    </div>
+                    <div class="bg-orange-50 p-4 rounded-xl text-center">
+                        <p class="text-sm text-gray-500">ค้างรับ</p>
+                        <p class="text-2xl font-bold text-orange-700">{{
+                            selectedOrderDetail?.outstandingQty?.toLocaleString() }}</p>
+                    </div>
+                </div>
+                <!-- Shipments History -->
+                <div v-if="selectedOrderDetail?.shipments?.length > 0" class="mb-4">
+                    <h4 class="font-bold text-gray-700 mb-2">📦 ประวัติการส่งวัตถุดิบ</h4>
+                    <div class="bg-gray-50 rounded-xl p-4 space-y-2">
+                        <div v-for="(ship, idx) in selectedOrderDetail.shipments" :key="idx"
+                            class="flex justify-between items-center py-2 border-b last:border-0">
+                            <span>รอบ {{ idx + 1 }} - {{ formatDate(ship.date) }}</span>
+                            <span class="font-bold text-indigo-600">{{ ship.qty?.toLocaleString() }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Materials -->
+                <div v-if="selectedOrderDetail?.materials?.length > 0" class="mb-4">
+                    <h4 class="font-bold text-gray-700 mb-2">📋 วัตถุดิบที่ส่งไป</h4>
+                    <div class="bg-orange-50 rounded-xl p-4">
+                        <div v-for="mat in selectedOrderDetail.materials" :key="mat.name"
+                            class="flex justify-between py-1">
+                            <span>{{ mat.name }}</span>
+                            <span class="font-medium">{{ mat.totalQty?.toLocaleString() }} {{ mat.unit }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="openReceiveModal(selectedOrderDetail)"
+                        class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium py-3 rounded-xl">📥
+                        รับของ</button>
+                    <button @click="openShipmentModal(selectedOrderDetail); showOrderDetailModal = false"
+                        class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium py-3 rounded-xl">🚚
+                        ส่งเพิ่ม</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receive Modal -->
+        <div v-if="showReceiveModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-md card-shadow">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📥 รับของ - {{ selectedOrder?.orderNo }}</h3>
+                <div class="mb-4">
+                    <p class="text-gray-600 mb-2">สินค้า: <strong>{{ selectedOrder?.productName }}</strong></p>
+                    <p class="text-gray-600 mb-2">ค้างรับ: <strong class="text-red-600">{{ selectedOrder?.outstandingQty
+                            }}</strong></p>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">จำนวนที่รับ</label>
+                    <input v-model.number="receiveQty" type="number" :max="selectedOrder?.outstandingQty"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" placeholder="กรอกจำนวน">
+                </div>
+                <div class="flex space-x-3">
+                    <button @click="closeReceiveModal"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl">ยกเลิก</button>
+                    <button @click="confirmReceive"
+                        class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium py-3 rounded-xl">✅
+                        ยืนยันรับของ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sheet Summary Modal -->
+        <div v-if="showSheetModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto card-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">📊 สรุปยอดสินค้าจาก Google Sheet</h3>
+                    <button @click="showSheetModal = false"
+                        class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                </div>
+                <!-- Filter Tabs -->
+                <div class="flex space-x-2 mb-4 flex-wrap gap-2">
+                    <button @click="sheetFilter = 'all'"
+                        :class="sheetFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'"
+                        class="px-4 py-2 rounded-lg font-medium">ทั้งหมด</button>
+                    <button @click="sheetFilter = 'จูน'"
+                        :class="sheetFilter === 'จูน' ? 'bg-pink-600 text-white' : 'bg-pink-100 text-pink-700'"
+                        class="px-4 py-2 rounded-lg font-medium">🏭 จูน</button>
+                    <button @click="sheetFilter = 'CMI'"
+                        :class="sheetFilter === 'CMI' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'"
+                        class="px-4 py-2 rounded-lg font-medium">🏭 CMI</button>
+                    <button @click="sheetFilter = 'บางปู'"
+                        :class="sheetFilter === 'บางปู' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'"
+                        class="px-4 py-2 rounded-lg font-medium">🏭 บางปู</button>
+                </div>
+                <!-- Date Range Filter -->
+                <div
+                    class="flex flex-wrap items-center gap-3 mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-600">📅 ช่วงวันที่:</span>
+                        <input type="text" v-model="dateFrom" @change="applyDateFilter" placeholder="dd/mm/yyyy"
+                            class="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm text-center">
+                        <span class="text-gray-500">ถึง</span>
+                        <input type="text" v-model="dateTo" @change="applyDateFilter" placeholder="dd/mm/yyyy"
+                            class="w-28 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-indigo-500 outline-none text-sm text-center">
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="setQuickDate('today')"
+                            class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium">วันนี้</button>
+                        <button @click="setQuickDate('week')"
+                            class="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 font-medium">7
+                            วัน</button>
+                        <button @click="setQuickDate('month')"
+                            class="px-3 py-1.5 text-xs bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 font-medium">30
+                            วัน</button>
+                        <button @click="setQuickDate('all')"
+                            class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ทั้งหมด</button>
+                    </div>
+                </div>
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl p-4 text-white">
+                        <p class="text-sm opacity-80">🏭 จูน</p>
+                        <p class="text-2xl font-bold">{{ sheetSummary.jun?.total || 0 }} ลัง</p>
+                        <p class="text-sm opacity-80">{{ sheetSummary.jun?.count || 0 }} รายการ</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 text-white">
+                        <p class="text-sm opacity-80">🏭 CMI</p>
+                        <p class="text-2xl font-bold">{{ sheetSummary.cmi?.total || 0 }} ลัง</p>
+                        <p class="text-sm opacity-80">{{ sheetSummary.cmi?.count || 0 }} รายการ</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-xl p-4 text-white">
+                        <p class="text-sm opacity-80">🏭 บางปู</p>
+                        <p class="text-2xl font-bold">{{ sheetSummary.bangpu?.total || 0 }} ลัง</p>
+                        <p class="text-sm opacity-80">{{ sheetSummary.bangpu?.count || 0 }} รายการ</p>
+                    </div>
+                </div>
+                <!-- Data Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">สินค้า</th>
+                                <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">ผลรวม (ลัง)</th>
+                                <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">ผลรวม (เศษ)</th>
+                                <th class="px-4 py-3 text-center text-sm font-bold text-gray-700 bg-purple-50">ชิ้น/ลัง
+                                </th>
+                                <th class="px-4 py-3 text-center text-sm font-bold text-gray-700 bg-purple-50">รวมชิ้น
+                                </th>
+                                <th class="px-4 py-3 text-center text-sm font-bold text-gray-700">จำนวนรายการ</th>
+                                <th class="px-4 py-3 text-left text-sm font-bold text-gray-700">แหล่งที่มา</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, idx) in filteredSheetData" :key="idx" class="border-b hover:bg-indigo-50">
+                                <td class="px-4 py-3 font-medium">{{ item.productName }}</td>
+                                <td class="px-4 py-3 text-center"><span
+                                        class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold">{{
+                                        item.totalBoxes }}</span></td>
+                                <td class="px-4 py-3 text-center"><span
+                                        class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold">{{
+                                        item.totalFractions }}</span></td>
+                                <td class="px-4 py-3 text-center bg-purple-50/50">
+                                    <input type="number" :value="getPiecesPerBox(item.productName)"
+                                        @change="setPiecesPerBox(item.productName, $event.target.value)"
+                                        class="w-16 px-2 py-1 text-center border-2 border-purple-200 rounded-lg focus:border-purple-500 outline-none text-sm font-medium"
+                                        placeholder="0" min="0">
+                                </td>
+                                <td class="px-4 py-3 text-center bg-purple-50/50">
+                                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold">{{
+                                        calculateTotalPieces(item) }}</span>
+                                </td>
+                                <td class="px-4 py-3 text-center text-gray-600">{{ item.count }}</td>
+                                <td class="px-4 py-3">
+                                    <span
+                                        :class="{'bg-pink-100 text-pink-700': item.vendor === 'จูน', 'bg-blue-100 text-blue-700': item.vendor === 'CMI', 'bg-green-100 text-green-700': item.vendor === 'บางปู'}"
+                                        class="px-2 py-1 rounded-full text-sm font-medium">{{ item.vendor }}</span>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredSheetData.length === 0">
+                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูล</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                    <p class="text-sm text-gray-500">อัปเดตล่าสุด: {{ sheetLastUpdated || '-' }}</p>
+                    <button @click="fetchSheetData"
+                        class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl font-medium">🔄
+                        รีเฟรชข้อมูล</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div v-if="toast.show" class="fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-lg"
+            :class="toast.type === 'success' ? 'bg-green-500 text-white' : toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'">
+            {{ toast.message }}
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue
+
+        createApp({
+            setup() {
+                const activeTab = ref('order')
+                const products = ref([])
+                const orders = ref([])
+                const receiveHistory = ref([])
+                const toast = ref({ show: false, message: '', type: 'success' })
+
+                // Modals
+                const showShipmentModal = ref(false)
+                const showOrderDetailModal = ref(false)
+                const showReceiveModal = ref(false)
+                const showSheetModal = ref(false)
+                const selectedShipmentOrder = ref(null)
+                const selectedOrderDetail = ref(null)
+                const selectedOrder = ref(null)
+
+                // Forms
+                const newProduct = ref({ code: '', name: '', unit: 'ชิ้น', baseQty: 10000 })
+                const selectedProductForBom = ref('')
+                const newMaterial = ref({ name: '', qty: 0, unit: '' })
+                const bomMaterials = ref([{ name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }])
+                const newOrder = ref({ productId: '', qty: 0, subcontractor: '', dueDate: '' })
+                const calculatedMaterials = ref([])
+                const newShipment = ref({ qty: 0, date: new Date().toISOString().split('T')[0] })
+                const receiveQty = ref(0)
+                const editingRoundIdx = ref(-1)
+                const editingMaterials = ref([])
+                const combinedDate = ref(new Date().toISOString().split('T')[0])
+
+                // Sheet Data
+                const sheetFilter = ref('all')
+                const sheetData = ref([])
+                const rawSheetRows = ref([]) // Store raw data for filtering
+                const sheetSummary = ref({ jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } })
+                const sheetLastUpdated = ref('')
+                const dateFrom = ref('')
+                const dateTo = ref('')
+
+                // Computed
+                const productsWithBom = computed(() => products.value.filter(p => p.bom && p.bom.length > 0))
+                const totalOutstanding = computed(() => orders.value.reduce((sum, o) => sum + (o.outstandingQty || 0), 0))
+                const filteredSheetData = computed(() => {
+                    if (sheetFilter.value === 'all') return sheetData.value
+                    return sheetData.value.filter(d => d.vendor === sheetFilter.value)
+                })
+                // Unique product names from Google Sheet
+                const sheetProductList = computed(() => {
+                    const names = new Set()
+                    rawSheetRows.value.forEach(row => {
+                        const name = row['ชื่อสินค้า']
+                        if (name && String(name).trim()) names.add(String(name).trim())
+                    })
+                    return [...names].sort()
+                })
+
+                // Methods
+                const showToast = (msg, type = 'success') => { toast.value = { show: true, message: msg, type }; setTimeout(() => toast.value.show = false, 3000) }
+
+                // === Google Apps Script URL (ต้อง Deploy แล้ววาง URL ตรงนี้) ===
+                const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9OToWNr3B9iOBLDRjnMw6_O7rt8fmvdb_i24iwLVHzq8Odg9k0bC1GTG6uxTFNzJDcw/exec'
+
+                const saveStorage = () => {
+                    localStorage.setItem('sub_products', JSON.stringify(products.value))
+                    localStorage.setItem('sub_orders', JSON.stringify(orders.value))
+                    localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value))
+                    // Sync to Google Sheet (background, non-blocking)
+                    syncToSheet()
+                }
+                const loadStorage = () => { try { const p = localStorage.getItem('sub_products'); const o = localStorage.getItem('sub_orders'); const h = localStorage.getItem('sub_history'); if (p) products.value = JSON.parse(p); if (o) orders.value = JSON.parse(o); if (h) receiveHistory.value = JSON.parse(h) } catch (e) { console.error(e) } }
+
+                const syncToSheet = async () => {
+                    if (!APPS_SCRIPT_URL) return
+                    try {
+                        // Sync Orders
+                        await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: 'syncOrders', orders: orders.value })
+                        })
+                        // Sync Products
+                        await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: 'syncProducts', products: products.value })
+                        })
+                        console.log('✅ Synced to Google Sheet')
+                    } catch (err) {
+                        console.warn('⚠️ Sheet sync failed:', err.message)
+                    }
+                }
+
+                const loadFromSheet = async () => {
+                    if (!APPS_SCRIPT_URL) { showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
+                    try {
+                        showToast('กำลังโหลดจาก Google Sheet...', 'info')
+                        const [ordersRes, productsRes] = await Promise.all([
+                            fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json()),
+                            fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
+                        ])
+                        if (ordersRes.success && ordersRes.orders.length > 0) {
+                            orders.value = ordersRes.orders
+                        }
+                        if (productsRes.success && productsRes.products.length > 0) {
+                            products.value = productsRes.products
+                        }
+                        localStorage.setItem('sub_products', JSON.stringify(products.value))
+                        localStorage.setItem('sub_orders', JSON.stringify(orders.value))
+                        showToast('โหลดจาก Google Sheet สำเร็จ! (สินค้า: ' + products.value.length + ', ใบสั่งผลิต: ' + orders.value.length + ')')
+                    } catch (err) {
+                        showToast('โหลดจาก Sheet ล้มเหลว: ' + err.message, 'error')
+                    }
+                }
+
+
+                const generateOrderNo = () => { const now = new Date(); return 'JO-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(orders.value.length + 1).padStart(3, '0') }
+                const formatDate = (d) => { if (!d) return '-'; return new Date(d).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) }
+
+                const addProduct = () => {
+                    if (!newProduct.value.code || !newProduct.value.name) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
+                    products.value.push({ id: Date.now().toString(), ...JSON.parse(JSON.stringify(newProduct.value)), bom: [] })
+                    newProduct.value = { code: '', name: '', unit: 'ชิ้น', baseQty: 10000 }
+                    saveStorage(); showToast('เพิ่มสินค้าสำเร็จ!')
+                }
+
+                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
+
+                const addMaterialToBom = () => {
+                    if (!selectedProductForBom.value || !newMaterial.value.name) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
+                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    if (product) { if (!product.bom) product.bom = []; product.bom.push({ ...newMaterial.value }); newMaterial.value = { name: '', qty: 0, unit: '' }; saveStorage(); showToast('เพิ่มวัตถุดิบสำเร็จ!') }
+                }
+
+                // Select product from Sheet dropdown
+                const selectSheetProduct = (name) => {
+                    if (name) {
+                        const spaceIdx = name.indexOf(' ')
+                        if (spaceIdx > 0) {
+                            newProduct.value.code = name.substring(0, spaceIdx).trim()
+                            newProduct.value.name = name.substring(spaceIdx + 1).trim()
+                        } else {
+                            newProduct.value.code = name
+                            newProduct.value.name = name
+                        }
+                    }
+                }
+
+                // BOM: Duplicate from another product
+                const dupBom = (productId) => {
+                    if (!productId) return
+                    const source = products.value.find(p => p.id === productId)
+                    if (source && source.bom && source.bom.length > 0) {
+                        bomMaterials.value = source.bom.map(m => ({ name: m.name, qty: m.qty, unit: m.unit }))
+                        showToast(`ดึง BOM จาก ${source.code} - ${source.name} (${source.bom.length} รายการ)`, 'info')
+                    } else {
+                        showToast('สินค้านี้ยังไม่มี BOM', 'error')
+                    }
+                }
+
+                // BOM: Add empty row
+                const addBomRow = () => {
+                    bomMaterials.value.push({ name: '', qty: 0, unit: '' })
+                }
+
+                // BOM: Save all materials at once
+                const saveBomMaterials = () => {
+                    if (!selectedProductForBom.value) { showToast('กรุณาเลือกสินค้าก่อน', 'error'); return }
+                    const validMats = bomMaterials.value.filter(m => m.name && m.name.trim())
+                    if (validMats.length === 0) { showToast('กรุณากรอกวัตถุดิบอย่างน้อย 1 รายการ', 'error'); return }
+                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    if (product) {
+                        if (!product.bom) product.bom = []
+                        validMats.forEach(m => {
+                            product.bom.push({ name: m.name.trim(), qty: m.qty || 0, unit: m.unit || '' })
+                        })
+                        saveStorage()
+                        showToast(`เพิ่ม ${validMats.length} วัตถุดิบสำเร็จ!`)
+                        bomMaterials.value = [{ name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }, { name: '', qty: 0, unit: '' }]
+                    }
+                }
+
+                const calculateMaterials = () => {
+                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    if (product && product.bom && newOrder.value.qty > 0) {
+                        const ratio = newOrder.value.qty / (product.baseQty || 1)
+                        calculatedMaterials.value = product.bom.map(m => ({ name: m.name, unit: m.unit, totalQty: Math.ceil(m.qty * ratio) }))
+                        newOrder.value.orderNo = generateOrderNo()
+                    } else { calculatedMaterials.value = [] }
+                }
+
+                const createJobOrder = () => {
+                    if (!newOrder.value.productId || !newOrder.value.qty) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
+                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    const order = { id: Date.now().toString(), orderNo: generateOrderNo(), productId: newOrder.value.productId, productName: product.name, productUnit: product.unit, qty: newOrder.value.qty, subcontractor: newOrder.value.subcontractor, dueDate: newOrder.value.dueDate, status: 'pending', receivedQty: 0, outstandingQty: newOrder.value.qty, materials: JSON.parse(JSON.stringify(calculatedMaterials.value)), shipments: [], createdAt: new Date().toISOString() }
+                    orders.value.unshift(order); saveStorage(); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
+                }
+
+                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
+
+                const openShipmentModal = (order) => {
+                    selectedShipmentOrder.value = order
+                    const remainingQty = getRemainingToShip(order)
+                    newShipment.value = { qty: remainingQty > 0 ? remainingQty : 0, date: new Date().toISOString().split('T')[0], materials: [] }
+                    recalcShipMaterials()
+                    showShipmentModal.value = true
+                }
+                const recalcShipMaterials = () => {
+                    const order = selectedShipmentOrder.value
+                    if (!order?.materials || order.materials.length === 0) return
+                    newShipment.value.materials = order.materials.map(m => {
+                        const totalForOrder = m.totalQty || 0
+                        let alreadySent = 0
+                        if (order.shipments) {
+                            order.shipments.forEach(s => {
+                                if (s.materials) {
+                                    const f = s.materials.find(sm => sm.name === m.name)
+                                    if (f) alreadySent += (f.sendQty || 0)
+                                }
+                            })
+                        }
+                        const matRemaining = totalForOrder - alreadySent
+                        return { name: m.name, unit: m.unit, totalQty: totalForOrder, alreadySent, remaining: matRemaining > 0 ? matRemaining : 0, sendQty: matRemaining > 0 ? matRemaining : 0 }
+                    })
+                }
+                const getTotalShipped = (order) => { if (!order?.shipments) return 0; return order.shipments.reduce((sum, s) => sum + (s.qty || 0), 0) }
+                const getRemainingToShip = (order) => { if (!order) return 0; return (order.qty || 0) - getTotalShipped(order) }
+                const getNextShipmentRound = (order) => { if (!order?.shipments) return 1; return order.shipments.length + 1 }
+                const getMatShipStatus = (order) => {
+                    if (!order?.materials || order.materials.length === 0) return 'none'
+                    if (!order?.shipments || order.shipments.length === 0) return 'none'
+                    // Check if any shipment actually has materials data
+                    const hasMatData = order.shipments.some(s => s.materials && s.materials.length > 0)
+                    if (!hasMatData) return 'none'
+                    let allComplete = true
+                    let anySent = false
+                    for (const m of order.materials) {
+                        const totalNeeded = m.totalQty || 0
+                        if (totalNeeded <= 0) continue // skip materials with no qty
+                        let sent = 0
+                        order.shipments.forEach(s => {
+                            if (s.materials) {
+                                const found = s.materials.find(sm => sm.name === m.name)
+                                if (found) sent += (found.sendQty || 0)
+                            }
+                        })
+                        if (sent > 0) anySent = true
+                        if (sent < totalNeeded) allComplete = false
+                    }
+                    if (!anySent) return 'none'
+                    if (allComplete) return 'complete'
+                    return 'partial'
+                }
+                const getMatSummary = (order) => {
+                    if (!order?.materials || order.materials.length === 0) return []
+                    return order.materials.map(m => {
+                        const total = m.totalQty || 0
+                        let totalSent = 0
+                        const rounds = []
+                        if (order.shipments) {
+                            order.shipments.forEach(s => {
+                                if (s.materials) {
+                                    const f = s.materials.find(sm => sm.name === m.name)
+                                    const qty = f ? (f.sendQty || 0) : 0
+                                    if (qty > 0) rounds.push(qty)
+                                    totalSent += qty
+                                }
+                            })
+                        }
+                        return { name: m.name, unit: m.unit, rounds, total, sent: totalSent, remaining: total - totalSent, done: totalSent >= total }
+                    })
+                }
+                const confirmShipment = () => {
+                    const mats = newShipment.value.materials || []
+                    const validMats = mats.filter(m => m.sendQty > 0)
+                    if (validMats.length === 0) { showToast('กรุณากรอกจำนวนวัตถุดิบที่ส่ง', 'error'); return }
+                    const order = orders.value.find(o => o.id === selectedShipmentOrder.value.id)
+                    if (order) {
+                        if (!order.shipments) order.shipments = []
+                        const shipmentData = {
+                            date: newShipment.value.date,
+                            round: order.shipments.length + 1,
+                            materials: validMats.map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty }))
+                        }
+                        order.shipments.push(shipmentData)
+                        saveStorage()
+                        showToast('บันทึกการส่งรอบ ' + shipmentData.round + ' สำเร็จ!')
+                    }
+                    showShipmentModal.value = false
+                }
+
+                const openOrderDetail = (order) => { selectedOrderDetail.value = order; showOrderDetailModal.value = true }
+                const openReceiveModal = (order) => { selectedOrder.value = order; receiveQty.value = 0; showReceiveModal.value = true; showOrderDetailModal.value = false }
+                const closeReceiveModal = () => { showReceiveModal.value = false }
+                const confirmReceive = () => {
+                    if (receiveQty.value <= 0) { showToast('กรุณากรอกจำนวน', 'error'); return }
+                    const order = orders.value.find(o => o.id === selectedOrder.value.id)
+                    if (order) { order.receivedQty = (order.receivedQty || 0) + receiveQty.value; order.outstandingQty = order.qty - order.receivedQty; if (order.outstandingQty <= 0) order.status = 'completed'; else order.status = 'in_progress'; receiveHistory.value.push({ orderId: order.id, orderNo: order.orderNo, productName: order.productName, qty: receiveQty.value, receivedAt: new Date().toISOString() }); saveStorage(); showToast('รับของสำเร็จ!') }
+                    showReceiveModal.value = false
+                }
+
+                const editShipmentRound = (idx) => {
+                    editingRoundIdx.value = idx
+                    const ship = selectedShipmentOrder.value.shipments[idx]
+                    editingMaterials.value = ship.materials ? ship.materials.map(m => ({ ...m })) : []
+                }
+                const saveShipmentEdit = () => {
+                    const order = orders.value.find(o => o.id === selectedShipmentOrder.value.id)
+                    if (order && order.shipments[editingRoundIdx.value]) {
+                        order.shipments[editingRoundIdx.value].materials = editingMaterials.value.filter(m => m.sendQty > 0).map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty }))
+                        saveStorage()
+                        selectedShipmentOrder.value = { ...order }
+                        showToast('แก้ไขรอบ ' + (editingRoundIdx.value + 1) + ' สำเร็จ!')
+                    }
+                    editingRoundIdx.value = -1
+                }
+                const printDeliveryRound = (order, roundIdx) => {
+                    const ship = order.shipments[roundIdx]
+                    if (!ship) return
+                    const roundNo = roundIdx + 1
+                    const dnNo = order.orderNo.replace('JO-', 'DN-') + '-' + roundNo
+                    const printWin = window.open('', '_blank', 'width=800,height=900')
+                    let matsHTML = '<p style="color:#999;">ไม่มีข้อมูลวัตถุดิบ</p>'
+                    if (ship.materials && ship.materials.length > 0) {
+                        matsHTML = '<table style="width:100%;border-collapse:collapse;margin-top:10px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:8px;">ลำดับ</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:8px;">หน่วย</th></tr></thead><tbody>'
+                        ship.materials.forEach((m, idx) => {
+                            matsHTML += `<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">${idx + 1}</td><td style="border:1px solid #ddd;padding:8px;">${m.name}</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">${m.unit || ''}</td></tr>`
+                        })
+                        matsHTML += '</tbody></table>'
+                    }
+
+                    printWin.document.write(`<!DOCTYPE html><html><head><title>${dnNo}</title><style>
+                    body{font-family:'Sarabun',sans-serif;padding:30px;color:#333}
+                    h1{color:#4f46e5;border-bottom:3px solid #4f46e5;padding-bottom:10px}
+                    h2{color:#333;margin:0}table{font-size:14px}
+                    .header-grid{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+                    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0;padding:15px;background:#f8fafc;border-radius:10px}
+                    .info-item{display:flex;gap:8px}.info-label{color:#6b7280;min-width:100px}.info-value{font-weight:bold}
+                    .signature{display:flex;justify-content:space-around;margin-top:40px;gap:20px;flex-wrap:wrap}
+                    .sig-box{text-align:center;flex:1;min-width:200px}
+                    .sig-canvas{border:2px dashed #ccc;border-radius:8px;cursor:crosshair;touch-action:none;width:100%;max-width:300px;height:150px;background:#fafafa}
+                    .sig-label{margin-top:8px;font-weight:bold;color:#555}
+                    .sig-clear{margin-top:5px;padding:4px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:12px}
+                    .sig-clear:hover{background:#fee2e2;color:#ef4444}
+                    .print-btn{display:block;margin:30px auto 0;padding:12px 40px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}
+                    .print-btn:hover{opacity:0.9}
+                    @media print{.sig-clear,.print-btn,.no-print{display:none!important}.sig-canvas{border:2px solid #eee}}
+                    </style></head><body>
+                    <div class="header-grid">
+                        <div>
+                            <h1 style="margin-bottom:5px;">🚚 ใบส่งของ</h1>
+                            <h2 style="color:#4f46e5;font-size:20px;">${dnNo}</h2>
+                        </div>
+                        <div style="text-align:right;color:#6b7280;font-size:13px;">
+                            <p>วันที่ส่ง: ${formatDate(ship.date)}</p>
+                            <p>พิมพ์: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        </div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item"><span class="info-label">เลขใบสั่งผลิต:</span><span class="info-value">${order.orderNo}</span></div>
+                        <div class="info-item"><span class="info-label">เลขใบส่งของ:</span><span class="info-value" style="color:#4f46e5;">${dnNo}</span></div>
+                        <div class="info-item"><span class="info-label">สินค้า:</span><span class="info-value">${order.productName}</span></div>
+                        <div class="info-item"><span class="info-label">ผู้รับจ้าง:</span><span class="info-value">${order.subcontractor || '-'}</span></div>
+                        <div class="info-item"><span class="info-label">ยอดสั่งผลิต:</span><span class="info-value">${(order.qty || 0).toLocaleString()} ${order.productUnit || ''}</span></div>
+                        <div class="info-item"><span class="info-label">รอบที่:</span><span class="info-value">${roundNo} / ${order.shipments.length}</span></div>
+                    </div>
+                    <h3 style="font-size:14px;">📦 รายการวัตถุดิบที่ส่ง - รอบที่ ${roundNo}</h3>
+                    ${matsHTML}
+                    <div class="signature">
+                        <div class="sig-box">
+                            <canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas>
+                            <p class="sig-label">ผู้ส่งของ</p>
+                            <button class="sig-clear" onclick="clearSig('sigSender')">ล้างลายเซ็น</button>
+                        </div>
+                        <div class="sig-box">
+                            <canvas id="sigReceiver" class="sig-canvas" width="300" height="150"></canvas>
+                            <p class="sig-label">ผู้รับของ</p>
+                            <button class="sig-clear" onclick="clearSig('sigReceiver')">ล้างลายเซ็น</button>
+                        </div>
+                    </div>
+                    <button class="print-btn" onclick="window.print()">🖨️ พิมพ์ใบส่งของ</button>
+                    </body></html>`)
+                    printWin.document.close()
+                    const sigScript = printWin.document.createElement('script')
+                    sigScript.textContent = "function initSig(id){var c=document.getElementById(id);var ctx=c.getContext('2d');var drawing=false;var rect=c.getBoundingClientRect();c.width=rect.width;c.height=rect.height;ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';function getPos(e){var r=c.getBoundingClientRect();var t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}function start(e){e.preventDefault();drawing=true;var p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)}function move(e){e.preventDefault();if(!drawing)return;var p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()}function stop(e){e.preventDefault();drawing=false}c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',stop);c.addEventListener('mouseleave',stop);c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',stop)}function clearSig(id){var c=document.getElementById(id);var ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height)}initSig('sigSender');initSig('sigReceiver');"
+                    printWin.document.body.appendChild(sigScript)
+                }
+                const openDeliveryNote = (order) => {
+                    if (!order.shipments || order.shipments.length === 0) {
+                        showToast('ยังไม่มีการส่งของ กรุณาบันทึกการส่งก่อน', 'error');
+                        return
+                    }
+                    printDeliveryRound(order, order.shipments.length - 1)
+                }
+                const printCombinedDelivery = () => {
+                    const targetDate = combinedDate.value
+                    if (!targetDate) { showToast('กรุณาเลือกวันที่', 'error'); return }
+                    const matchedOrders = []
+                    orders.value.forEach(order => {
+                        if (!order.shipments) return
+                        order.shipments.forEach((ship, idx) => {
+                            if (ship.date === targetDate) { matchedOrders.push({ order, ship, roundIdx: idx }) }
+                        })
+                    })
+                    if (matchedOrders.length === 0) { showToast('ไม่มีรายการส่งของในวันที่เลือก', 'error'); return }
+                    const dnNo = 'DN-COMBINED-' + targetDate.replace(/-/g, '')
+                    const printWin = window.open('', '_blank', 'width=800,height=900')
+                    let ordersHTML = ''
+                    matchedOrders.forEach(({ order, ship, roundIdx }) => {
+                        ordersHTML += `<h3 style="font-size:14px;margin-top:20px;color:#4f46e5;">📋 ${order.orderNo} — ${order.productName} (รอบ ${roundIdx + 1})</h3>`
+                        if (ship.materials && ship.materials.length > 0) {
+                            ordersHTML += '<table style="width:100%;border-collapse:collapse;margin-top:5px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:6px;">ลำดับ</th><th style="border:1px solid #ddd;padding:6px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:6px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:6px;">หน่วย</th></tr></thead><tbody>'
+                            ship.materials.forEach((m, mi) => {
+                                ordersHTML += `<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">${mi + 1}</td><td style="border:1px solid #ddd;padding:6px;">${m.name}</td><td style="border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">${m.unit || ''}</td></tr>`
+                            })
+                            ordersHTML += '</tbody></table>'
+                        }
+                    })
+                    printWin.document.write(`<!DOCTYPE html><html><head><title>${dnNo}</title><style>body{font-family:'Sarabun',sans-serif;padding:30px;color:#333}h1{color:#4f46e5;border-bottom:3px solid #4f46e5;padding-bottom:10px}h2{color:#333;margin:0}table{font-size:14px}.header-grid{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}.signature{display:flex;justify-content:space-around;margin-top:40px;gap:20px;flex-wrap:wrap}.sig-box{text-align:center;flex:1;min-width:200px}.sig-canvas{border:2px dashed #ccc;border-radius:8px;cursor:crosshair;touch-action:none;width:100%;max-width:300px;height:150px;background:#fafafa}.sig-label{margin-top:8px;font-weight:bold;color:#555}.sig-clear{margin-top:5px;padding:4px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:12px}.sig-clear:hover{background:#fee2e2;color:#ef4444}.print-btn{display:block;margin:30px auto 0;padding:12px 40px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}.print-btn:hover{opacity:0.9}@media print{.sig-clear,.print-btn{display:none!important}.sig-canvas{border:2px solid #eee}}</style></head><body><div class="header-grid"><div><h1 style="margin-bottom:5px;">🚚 ใบส่งของรวม</h1><h2 style="color:#4f46e5;font-size:20px;">${dnNo}</h2></div><div style="text-align:right;color:#6b7280;font-size:13px;"><p>วันที่ส่ง: ${formatDate(targetDate)}</p><p>จำนวน: ${matchedOrders.length} รายการ</p><p>พิมพ์: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div></div>${ordersHTML}<div class="signature"><div class="sig-box"><canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้ส่งของ</p><button class="sig-clear" onclick="clearSig('sigSender')">ล้างลายเซ็น</button></div><div class="sig-box"><canvas id="sigReceiver" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้รับของ</p><button class="sig-clear" onclick="clearSig('sigReceiver')">ล้างลายเซ็น</button></div></div><button class="print-btn" onclick="window.print()">🖨️ พิมพ์ใบส่งของ</button></body></html>`)
+                    printWin.document.close()
+                    const sigScript2 = printWin.document.createElement('script')
+                    sigScript2.textContent = "function initSig(id){var c=document.getElementById(id);var ctx=c.getContext('2d');var drawing=false;var rect=c.getBoundingClientRect();c.width=rect.width;c.height=rect.height;ctx.strokeStyle='#333';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';function getPos(e){var r=c.getBoundingClientRect();var t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}function start(e){e.preventDefault();drawing=true;var p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)}function move(e){e.preventDefault();if(!drawing)return;var p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()}function stop(e){e.preventDefault();drawing=false}c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);c.addEventListener('mouseup',stop);c.addEventListener('mouseleave',stop);c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',stop)}function clearSig(id){var c=document.getElementById(id);var ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height)}initSig('sigSender');initSig('sigReceiver');"
+                    printWin.document.body.appendChild(sigScript2)
+                }
+
+                const forceLoadFromDatabase = () => { loadStorage(); showToast('โหลดข้อมูลใหม่แล้ว!') }
+
+                // Google Sheet Configuration
+                const SHEET_ID = '1PTXUxu_vJW7EXEp5k11W-bgogDAYY5tSGl2YhYRvuv4'
+                const SHEET_GID = '0'
+                const sheetLoading = ref(false)
+
+                // === ดึงยอดรับเข้าจาก Sheet (match เลข JO ในหมายเหตุเท่านั้น) ===
+                const getReceivedFromSheet = (orderNo) => {
+                if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return 0
+                let totalPieces = 0
+                rawSheetRows.value.forEach(row => {
+                const remark = String(row['หมายเหตุ'] || '')
+                if (remark.includes(orderNo)) {
+                const boxes = parseInt(row['ผลรวม(ลัง)']) || 0
+                const fractions = parseInt(row['ผลรวม(เศษ)']) || 0
+                const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
+                const piecesPerBox = piecesPerBoxMap.value[sheetProduct] || 0
+                totalPieces += (boxes * piecesPerBox) + fractions
+                }
+                })
+                return totalPieces
+                }
+
+                // === เตือนถ้าเลข JO ตรง แต่ชื่อสินค้าไม่ตรง ===
+                const getMismatchWarnings = (orderNo, expectedProduct) => {
+                if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return []
+                const warnings = []
+                rawSheetRows.value.forEach((row, idx) => {
+                const remark = String(row['หมายเหตุ'] || '')
+                if (remark.includes(orderNo)) {
+                const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
+                if (sheetProduct && !sheetProduct.includes(expectedProduct) && !expectedProduct.includes(sheetProduct)) {
+                warnings.push({ rowNum: idx + 2, sheetProduct, remark })
+                }
+                }
+                })
+                return warnings
+                }
+
+                const detectVendor = (remark) => {
+                if (!remark) return null
+                const lower = remark.toLowerCase()
+                if (lower.includes('จูน') || lower.includes('jun')) return 'จูน'
+                if (lower.includes('cmi') || lower.includes('ซีเอ็มไอ')) return 'CMI'
+                if (lower.includes('บางปู') || lower.includes('bangpu')) return 'บางปู'
+                return null
+                }
+
+                const fetchSheetData = async () => {
+                sheetLoading.value = true
+                try {
+                const callbackName = 'googleSheetCallback_' + Date.now()
+                const url =
+                `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
+
+                const dataPromise = new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => { reject(new Error('Request timeout')) }, 15000)
+                window[callbackName] = (response) => { clearTimeout(timeout); delete window[callbackName]; resolve(response) }
+                })
+
+                const script = document.createElement('script')
+                script.src = url
+                script.onerror = () => { sheetLoading.value = false; showToast('ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้', 'error') }
+                document.body.appendChild(script)
+
+                const response = await dataPromise
+                document.body.removeChild(script)
+
+                if (response && response.table) {
+                const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
+
+
+
+                const rows = response.table.rows.map(row => {
+                const obj = {}
+                row.c.forEach((cell, idx) => {
+                    const key = headers[idx]
+                    obj[key] = cell ? (cell.f || cell.v || '') : ''
+                    // Store raw/formatted based on detected column
+                    // FORCE: Always use first column (index 0) for Date
+                    if (idx === 0) {
+                        obj['_dateRaw'] = cell ? cell.v : null
+                        obj['_dateFormatted'] = cell ? (cell.f || cell.v) : null
+                    }
+                })
+                return obj
+                })
+
+                // Store raw rows
+                rawSheetRows.value = rows
+                processDataWithFilter() // Initial process
+
+                sheetLastUpdated.value = new Date().toLocaleString('th-TH')
+
+                showToast('โหลดสำเร็จ! ' + rows.length + ' แถว', 'success')
+                } else {
+                showToast('ข้อมูลไม่ถูกต้อง', 'error')
+                }
+                } catch (error) {
+                console.error('Sheet fetch error:', error)
+                showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้: ' + error.message, 'error')
+                }
+                sheetLoading.value = false
+                }
+
+                const processDataWithFilter = () => {
+                const summary = {}
+                // Parse dd/mm/yyyy format
+                const parseDMY = (s) => {
+                if (!s) return null; const p = s.split('/'); if (p.length !== 3) return null; return new
+                    Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]))
+                }
+                const startDate = parseDMY(dateFrom.value)
+                const endDate = (() => { const d = parseDMY(dateTo.value); if (d) d.setHours(23, 59, 59); return d })()
+
+                let debugShown = false
+                let totalRows = 0
+                let matchedRows = 0
+                let invalidDateRows = 0
+
+                rawSheetRows.value.forEach(row => {
+                totalRows++
+                let rowDate = null
+                const rawVal = row._dateRaw
+                const fmtVal = row._dateFormatted
+
+                // === PARSE DATE FROM RAW VALUE ===
+                // Case 1: Google Viz Date object - "Date(y,m,d)" — year may be in Buddhist Era!
+                if (rawVal && typeof rawVal === 'string') {
+                    const vizMatch = String(rawVal).match(/Date\((\d+),(\d+),(\d+)\)/)
+                    if (vizMatch) {
+                        let vy = parseInt(vizMatch[1])
+                        let vm = parseInt(vizMatch[2])
+                        let vd = parseInt(vizMatch[3])
+                        if (vy > 2400) vy -= 543 // Convert BE to AD
+                        rowDate = new Date(vy, vm, vd)
+                    }
+                }
+
+                // Case 2: rawVal is already a Date-like string (ISO format)
+                if (!rowDate && rawVal && typeof rawVal === 'string' && !isNaN(new Date(rawVal).getTime())) {
+                    rowDate = new Date(rawVal)
+                }
+
+                // === PARSE DATE FROM FORMATTED VALUE ===
+                if (!rowDate && fmtVal) {
+                    const dateStr = String(fmtVal).trim()
+
+                    // Case 3: Thai short month "6 ก.พ. 2569"
+                    const thaiShort = {
+                        'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.':
+                            8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
+                    }
+                    const thaiLong = {
+                        'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6,
+                        'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
+                    }
+                    const allThaiMonths = { ...thaiShort, ...thaiLong }
+
+                    for (const [thName, thMonth] of Object.entries(allThaiMonths)) {
+                        if (dateStr.includes(thName)) {
+                            // Extract numbers from string
+                            const nums = dateStr.match(/\d+/g)
+                            if (nums && nums.length >= 2) {
+                                let day = parseInt(nums[0])
+                                let year = parseInt(nums[nums.length - 1])
+                                if (year > 2400) year -= 543
+                                else if (year < 100) year += 2000
+                                rowDate = new Date(year, thMonth, day)
+                            }
+                            break
+                        }
+                    }
+                    // Case 4: d/m/yyyy or d/m/yy format
+                    if (!rowDate) {
+                        const slashMatch = dateStr.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
+                        if (slashMatch) {
+                            let d = parseInt(slashMatch[1])
+                            let m = parseInt(slashMatch[2]) - 1
+                            let y = parseInt(slashMatch[3])
+                            if (y > 2400) y -= 543
+                            else if (y < 100) y += 2000
+                            rowDate = new Date(y, m, d)
+                        }
+                    }
+                    // Case 5: Standard JS Date parse as last resort
+                    if (!rowDate) {
+                        const parsed = new Date(dateStr)
+                        if (!isNaN(parsed.getTime())) rowDate = parsed
+                    }
+                }
+                // === DEBUG: Show first row data (only once) ===
+                if (!debugShown) {
+                    debugShown = true
+                    console.log('=== SHEET DEBUG ===')
+                    console.log('Raw Value (cell.v):', rawVal, typeof rawVal)
+                    console.log('Formatted Value (cell.f):', fmtVal, typeof fmtVal)
+                    console.log('Parsed Date:', rowDate)
+                    console.log('All keys:', Object.keys(row))
+                }
+                // === DATE FILTERING ===
+                if (startDate || endDate) {
+                    if (rowDate && !isNaN(rowDate.getTime())) {
+                        if (startDate && rowDate < startDate) return
+                        if (endDate && rowDate > endDate) return
+                    }
+                }
+
+                // === VENDOR & PRODUCT SUMMARIZATION ===
+                const remark = row['หมายเหตุ'] || ''
+                const vendor = detectVendor(remark)
+                if (vendor) {
+                matchedRows++
+                const productName = row['ชื่อสินค้า'] || 'ไม่ระบุ'
+                const totalBoxes = parseInt(row['ผลรวม(ลัง)']) || 0
+                const totalFractions = parseInt(row['ผลรวม(เศษ)']) || 0
+                const key = `${productName}_${vendor}`
+                if (!summary[key]) {
+                    summary[key] = { productName, vendor, totalBoxes: 0, totalFractions: 0, count: 0 }
+                }
+                summary[key].totalBoxes += totalBoxes
+                summary[key].totalFractions += totalFractions
+                summary[key].count += 1
+                }
+                })
+
+                sheetData.value = Object.values(summary).sort((a, b) => {
+                if (a.vendor !== b.vendor) return a.vendor.localeCompare(b.vendor)
+                return b.totalBoxes - a.totalBoxes
+                })
+
+                // Update summary totals
+                const summaryTotals = {
+                jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }
+                }
+                sheetData.value.forEach(item => {
+                if (item.vendor === 'จูน') { summaryTotals.jun.total += item.totalBoxes; summaryTotals.jun.count += item.count }
+                else if (item.vendor === 'CMI') {
+                summaryTotals.cmi.total += item.totalBoxes; summaryTotals.cmi.count +=
+                    item.count
+                }
+                else if (item.vendor === 'บางปู') {
+                summaryTotals.bangpu.total += item.totalBoxes; summaryTotals.bangpu.count +=
+                    item.count
+                }
+                })
+                sheetSummary.value = summaryTotals
+
+                // Show filter result info
+                if (startDate || endDate) {
+                showToast(`กรองวันที่: พบ ${matchedRows} รายการ จากทั้งหมด ${totalRows} แถว`, 'info')
+                }
+                }
+
+                const applyDateFilter = () => {
+                processDataWithFilter()
+                }
+
+                // Helper: format Date to dd/mm/yyyy
+                const toDMY = (d) => {
+                return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2,
+                '0') + '/' + d.getFullYear()
+                }
+
+                const setQuickDate = (range) => {
+                const today = new Date()
+                dateTo.value = toDMY(today)
+                if (range === 'today') {
+                dateFrom.value = toDMY(today)
+                } else if (range === 'week') {
+                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+                dateFrom.value = toDMY(weekAgo)
+                } else if (range === 'month') {
+                const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+                dateFrom.value = toDMY(monthAgo)
+                } else {
+                dateFrom.value = ''
+                dateTo.value = ''
+                }
+                applyDateFilter()
+                }
+
+                // Pieces per box configuration
+                const piecesPerBoxMap = ref(JSON.parse(localStorage.getItem('subcontracting_piecesPerBox') || '{}'))
+
+                const getPiecesPerBox = (productName) => { return piecesPerBoxMap.value[productName] || 0 }
+
+                const setPiecesPerBox = (productName, value) => {
+                const numValue = parseInt(value) || 0
+                piecesPerBoxMap.value[productName] = numValue
+                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                }
+
+                const calculateTotalPieces = (item) => {
+                const piecesPerBox = piecesPerBoxMap.value[item.productName] || 0
+                const totalFromBoxes = item.totalBoxes * piecesPerBox
+                const totalPieces = totalFromBoxes + (item.totalFractions || 0)
+                return totalPieces.toLocaleString()
+                }
+
+                onMounted(() => { loadStorage(); fetchSheetData() })
+
+                return {
+                activeTab, products, orders, receiveHistory, toast, showShipmentModal, showOrderDetailModal,
+                showReceiveModal, showSheetModal, selectedShipmentOrder, selectedOrderDetail, selectedOrder, newProduct,
+                selectedProductForBom, newMaterial, bomMaterials, newOrder, calculatedMaterials, newShipment, receiveQty,
+                editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
+                sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
+                showToast, generateOrderNo, formatDate, addProduct, deleteProduct, addMaterialToBom, selectSheetProduct,
+                addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, openShipmentModal,
+                recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
+                editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
+                openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
+                getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchSheetData, applyDateFilter, setQuickDate,
+                getPiecesPerBox, setPiecesPerBox, calculateTotalPieces
+                }
+                }
+                }).mount('#app')
+    </script>
+</body>
+
+</html>
