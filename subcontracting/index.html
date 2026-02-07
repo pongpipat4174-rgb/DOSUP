@@ -638,6 +638,9 @@
                 <div class="flex space-x-3">
                     <button @click="showShipmentModal = false"
                         class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl">ยกเลิก</button>
+                    <button @click="closeOrder"
+                        class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium py-3 rounded-xl hover:shadow-lg">🔒
+                        ปิดงานรายการนี้</button>
                     <button @click="confirmShipment"
                         class="flex-1 bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-medium py-3 rounded-xl hover:shadow-lg">✅
                         บันทึกการส่ง</button>
@@ -1066,6 +1069,19 @@
                 }
 
                 const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id !== id); saveStorage(); showToast('ลบสำเร็จ') } }
+
+                const closeOrder = () => {
+                    if (!selectedShipmentOrder.value) return
+                    if (!confirm('ต้องการปิดงานรายการนี้? ยอดค้างส่งจะถูกตัดออก')) return
+                    const order = orders.value.find(o => o.id === selectedShipmentOrder.value.id)
+                    if (order) {
+                        order.status = 'completed'
+                        order.outstandingQty = 0
+                        saveStorage()
+                        showShipmentModal.value = false
+                        showToast('🔒 ปิดงานเรียบร้อย! — ' + order.orderNo)
+                    }
+                }
 
                 const openShipmentModal = (order) => {
                     selectedShipmentOrder.value = order
@@ -1609,7 +1625,7 @@
                     editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
                     sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
                     showToast, generateOrderNo, formatDate, addProduct, deleteProduct, editBom, saveEditBom, editingProduct, addMaterialToBom, selectSheetProduct,
-                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, openShipmentModal,
+                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, closeOrder, openShipmentModal,
                     recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
                     editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
                     openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
