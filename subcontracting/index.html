@@ -1492,7 +1492,7 @@
                     return totalPieces.toLocaleString()
                 }
 
-                onMounted(() => { loadStorage(); fetchSheetData() })
+                onMounted(() => { loadStorage(); fetchSheetData(); if (products.value.length === 0 && APPS_SCRIPT_URL) { loadFromSheet() } })
 
                 return {
                     activeTab, products, orders, receiveHistory, toast, showShipmentModal, showOrderDetailModal,
