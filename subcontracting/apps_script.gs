@@ -49,14 +49,12 @@ function syncOrders(ss, orders) {
   let sheet = ss.getSheetByName('orders')
   if (!sheet) {
     sheet = ss.insertSheet('orders')
-    sheet.appendRow(['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'createdAt', 'updatedAt'])
   }
 
-  // Clear existing data (keep header)
-  const lastRow = sheet.getLastRow()
-  if (lastRow > 1) {
-    sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent()
-  }
+  // Always clear entire sheet and rewrite header
+  sheet.clear()
+  const headers = ['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'createdAt', 'updatedAt']
+  sheet.appendRow(headers)
 
   // Write all orders
   orders.forEach(order => {

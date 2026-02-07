@@ -859,10 +859,10 @@
                     }
                 }
 
-                const loadFromSheet = async () => {
-                    if (!APPS_SCRIPT_URL) { showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
+                const loadFromSheet = async (silent) => {
+                    if (!APPS_SCRIPT_URL) { if (!silent) showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
                     try {
-                        showToast('กำลังโหลดจาก Google Sheet...', 'info')
+                        if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
                         const [ordersRes, productsRes] = await Promise.all([
                             fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json()),
                             fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
@@ -875,9 +875,9 @@
                         }
                         localStorage.setItem('sub_products', JSON.stringify(products.value))
                         localStorage.setItem('sub_orders', JSON.stringify(orders.value))
-                        showToast('โหลดจาก Google Sheet สำเร็จ! (สินค้า: ' + products.value.length + ', ใบสั่งผลิต: ' + orders.value.length + ')')
+                        if (!silent) showToast('โหลดจาก Google Sheet สำเร็จ! (สินค้า: ' + products.value.length + ', ใบสั่งผลิต: ' + orders.value.length + ')')
                     } catch (err) {
-                        showToast('โหลดจาก Sheet ล้มเหลว: ' + err.message, 'error')
+                        if (!silent) showToast('โหลดจาก Sheet ล้มเหลว: ' + err.message, 'error')
                     }
                 }
 
@@ -1492,7 +1492,11 @@
                     return totalPieces.toLocaleString()
                 }
 
-                onMounted(() => { loadStorage(); fetchSheetData(); if (products.value.length === 0 && APPS_SCRIPT_URL) { loadFromSheet() } })
+                onMounted(() => {
+                    loadStorage(); fetchSheetData();
+                    if (products.value.length === 0 && APPS_SCRIPT_URL) { loadFromSheet() }
+                    if (APPS_SCRIPT_URL) { setInterval(() => { loadFromSheet(true) }, 30000) }
+                })
 
                 return {
                     activeTab, products, orders, receiveHistory, toast, showShipmentModal, showOrderDetailModal,
