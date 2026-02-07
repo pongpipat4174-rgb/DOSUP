@@ -364,10 +364,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="order in orders.filter(o => o.status !== 'completed').slice(0,5)"
-                                    :key="order.id" class="border-b hover:bg-gray-50">
+                                <tr v-for="order in orders.slice(0,10)" :key="order.id"
+                                    class="border-b hover:bg-gray-50">
                                     <td class="px-4 py-3">
                                         <span class="font-medium text-indigo-600">{{ order.orderNo }}</span>
+                                        <span v-if="order.status === 'completed'"
+                                            class="ml-1 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">🔒
+                                            ปิดแล้ว</span>
                                         <p v-if="order.bpr" class="text-xs text-purple-500">BPR: {{ order.bpr }}</p>
                                         <p v-if="order.lot" class="text-xs text-teal-600">Lot: {{ order.lot }}</p>
                                     </td>
