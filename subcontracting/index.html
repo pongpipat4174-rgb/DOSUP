@@ -920,11 +920,12 @@
                 // === Google Apps Script URL (ต้อง Deploy แล้ววาง URL ตรงนี้) ===
                 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3LhMJ0p3KhgG_jVAGLsZhO5D5cjpllyFrbMQhR5QQyLltP9HA4z--dqmlYwp1qDMR3Q/exec'
 
+                let lastSyncTime = 0
                 const saveStorage = () => {
                     localStorage.setItem('sub_products', JSON.stringify(products.value))
                     localStorage.setItem('sub_orders', JSON.stringify(orders.value))
                     localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value))
-                    // Sync to Google Sheet (background, non-blocking)
+                    lastSyncTime = Date.now()
                     syncToSheet()
                 }
                 const loadStorage = () => { try { const p = localStorage.getItem('sub_products'); const o = localStorage.getItem('sub_orders'); const h = localStorage.getItem('sub_history'); if (p) products.value = JSON.parse(p); if (o) orders.value = JSON.parse(o); if (h) receiveHistory.value = JSON.parse(h) } catch (e) { console.error(e) } }
@@ -952,6 +953,7 @@
 
                 const loadFromSheet = async (silent) => {
                     if (!APPS_SCRIPT_URL) { if (!silent) showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
+                    if (silent && (Date.now() - lastSyncTime) < 45000) { console.log('⏳ Skip auto-refresh (sync lock)'); return }
                     try {
                         if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
                         const [ordersRes, productsRes] = await Promise.all([
@@ -1595,10 +1597,9 @@
                     return totalPieces.toLocaleString()
                 }
 
-                onMounted(() => {
+                onMounted(async () => {
                     loadStorage(); fetchSheetData();
-                    if (products.value.length === 0 && APPS_SCRIPT_URL) { loadFromSheet() }
-                    if (APPS_SCRIPT_URL) { setInterval(() => { loadFromSheet(true) }, 30000) }
+                    if (APPS_SCRIPT_URL) { await loadFromSheet(true); setInterval(() => { loadFromSheet(true) }, 30000) }
                 })
 
                 return {
