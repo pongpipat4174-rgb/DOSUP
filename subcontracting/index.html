@@ -414,6 +414,9 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 text-center">
+                                        <button v-if="order.status === 'completed'" @click="reopenOrder(order.id)"
+                                            class="text-green-600 hover:text-green-800 p-1"
+                                            title="เปิดงานใหม่">🔓</button>
                                         <button @click="openShipmentModal(order)"
                                             class="text-teal-600 hover:text-teal-800 p-1" title="แบ่งส่งของ">🚚</button>
                                         <button @click="openDeliveryNote(order)"
@@ -698,9 +701,6 @@
                     </div>
                 </div>
                 <div class="flex space-x-3">
-                    <button @click="openReceiveModal(selectedOrderDetail)"
-                        class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium py-3 rounded-xl">📥
-                        รับของ</button>
                     <button @click="openShipmentModal(selectedOrderDetail); showOrderDetailModal = false"
                         class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium py-3 rounded-xl">🚚
                         ส่งเพิ่ม</button>
@@ -1083,6 +1083,17 @@
                         saveStorage()
                         showShipmentModal.value = false
                         showToast('🔒 ปิดงานเรียบร้อย! — ' + order.orderNo)
+                    }
+                }
+
+                const reopenOrder = (id) => {
+                    if (!confirm('ต้องการเปิดงานรายการนี้ใหม่?')) return
+                    const order = orders.value.find(o => o.id == id)
+                    if (order) {
+                        order.status = 'pending'
+                        order.outstandingQty = order.qty - (order.receivedQty || 0)
+                        saveStorage()
+                        showToast('🔓 เปิดงานใหม่ — ' + order.orderNo)
                     }
                 }
 
@@ -1628,7 +1639,7 @@
                     editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
                     sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
                     showToast, generateOrderNo, formatDate, addProduct, deleteProduct, editBom, saveEditBom, editingProduct, addMaterialToBom, selectSheetProduct,
-                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, closeOrder, openShipmentModal,
+                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, closeOrder, reopenOrder, openShipmentModal,
                     recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
                     editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
                     openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
