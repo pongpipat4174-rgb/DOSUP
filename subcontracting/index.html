@@ -997,7 +997,7 @@
 
                 const addMaterialToBom = () => {
                     if (!selectedProductForBom.value || !newMaterial.value.name) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
-                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    const product = products.value.find(p => p.id == selectedProductForBom.value)
                     if (product) { if (!product.bom) product.bom = []; product.bom.push({ ...newMaterial.value }); newMaterial.value = { name: '', qty: 0, unit: '' }; saveStorage(); showToast('เพิ่มวัตถุดิบสำเร็จ!') }
                 }
 
@@ -1018,7 +1018,7 @@
                 // BOM: Duplicate from another product
                 const dupBom = (productId) => {
                     if (!productId) return
-                    const source = products.value.find(p => p.id === productId)
+                    const source = products.value.find(p => p.id == productId)
                     if (source && source.bom && source.bom.length > 0) {
                         bomMaterials.value = source.bom.map(m => ({ name: m.name, qty: m.qty, unit: m.unit }))
                         showToast(`ดึง BOM จาก ${source.code} - ${source.name} (${source.bom.length} รายการ)`, 'info')
@@ -1037,7 +1037,7 @@
                     if (!selectedProductForBom.value) { showToast('กรุณาเลือกสินค้าก่อน', 'error'); return }
                     const validMats = bomMaterials.value.filter(m => m.name && m.name.trim())
                     if (validMats.length === 0) { showToast('กรุณากรอกวัตถุดิบอย่างน้อย 1 รายการ', 'error'); return }
-                    const product = products.value.find(p => p.id === selectedProductForBom.value)
+                    const product = products.value.find(p => p.id == selectedProductForBom.value)
                     if (product) {
                         if (!product.bom) product.bom = []
                         validMats.forEach(m => {
@@ -1050,7 +1050,7 @@
                 }
 
                 const calculateMaterials = () => {
-                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    const product = products.value.find(p => p.id == newOrder.value.productId)
                     if (product && product.bom && newOrder.value.qty > 0) {
                         const ratio = newOrder.value.qty / (product.baseQty || 1)
                         calculatedMaterials.value = product.bom.map(m => ({ name: m.name, unit: m.unit, totalQty: Math.ceil(m.qty * ratio) }))
@@ -1060,7 +1060,7 @@
 
                 const createJobOrder = () => {
                     if (!newOrder.value.productId || !newOrder.value.qty) { showToast('กรุณากรอกข้อมูลให้ครบ', 'error'); return }
-                    const product = products.value.find(p => p.id === newOrder.value.productId)
+                    const product = products.value.find(p => p.id == newOrder.value.productId)
                     const order = { id: Date.now().toString(), orderNo: generateOrderNo(), productId: newOrder.value.productId, productName: product.name, productUnit: product.unit, qty: newOrder.value.qty, subcontractor: newOrder.value.subcontractor, dueDate: newOrder.value.dueDate, bpr: newOrder.value.bpr || '', lot: newOrder.value.lot || '', mfd: newOrder.value.mfd || '', exp: newOrder.value.exp || '', status: 'pending', receivedQty: 0, outstandingQty: newOrder.value.qty, materials: JSON.parse(JSON.stringify(calculatedMaterials.value)), shipments: [], createdAt: new Date().toISOString() }
                     orders.value.unshift(order); saveStorage(); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
                 }
