@@ -417,6 +417,8 @@
                                         <button v-if="order.status === 'completed'" @click="reopenOrder(order.id)"
                                             class="text-green-600 hover:text-green-800 p-1"
                                             title="เปิดงานใหม่">🔓</button>
+                                        <button @click="editOrder(order)"
+                                            class="text-amber-600 hover:text-amber-800 p-1" title="แก้ไข">✏️</button>
                                         <button @click="openShipmentModal(order)"
                                             class="text-teal-600 hover:text-teal-800 p-1" title="แบ่งส่งของ">🚚</button>
                                         <button @click="openDeliveryNote(order)"
@@ -704,6 +706,70 @@
                     <button @click="openShipmentModal(selectedOrderDetail); showOrderDetailModal = false"
                         class="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-medium py-3 rounded-xl">🚚
                         ส่งเพิ่ม</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Order Modal -->
+        <div v-if="editingOrder" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-lg card-shadow max-h-[90vh] overflow-y-auto">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">✏️ แก้ไขใบสั่งผลิต - {{ editingOrder.orderNo }}</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">สินค้า</label>
+                        <select v-model="editingOrder.productId"
+                            class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                            <option v-for="p in products" :key="p.id" :value="p.id">{{ p.code }} - {{ p.name }}</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">จำนวน</label>
+                            <input type="number" v-model.number="editingOrder.qty"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">ผู้รับจ้าง</label>
+                            <input type="text" v-model="editingOrder.subcontractor"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">กำหนดส่ง</label>
+                        <input type="date" v-model="editingOrder.dueDate"
+                            class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">เลข BPR</label>
+                            <input type="text" v-model="editingOrder.bpr"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Lot</label>
+                            <input type="text" v-model="editingOrder.lot"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">MFD</label>
+                            <input type="date" v-model="editingOrder.mfd"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">EXP</label>
+                            <input type="date" v-model="editingOrder.exp"
+                                class="w-full px-3 py-2 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-3 mt-5">
+                    <button @click="editingOrder = null"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 rounded-xl">ยกเลิก</button>
+                    <button @click="saveEditOrder"
+                        class="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-medium py-3 rounded-xl hover:shadow-lg">💾
+                        บันทึก</button>
                 </div>
             </div>
         </div>
@@ -1072,6 +1138,29 @@
                 }
 
                 const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id != id); saveStorage(); showToast('ลบสำเร็จ') } }
+
+                const editingOrder = ref(null)
+                const editOrder = (order) => { editingOrder.value = JSON.parse(JSON.stringify(order)) }
+                const saveEditOrder = () => {
+                    if (!editingOrder.value) return
+                    const idx = orders.value.findIndex(o => o.id == editingOrder.value.id)
+                    if (idx === -1) { showToast('ไม่พบใบสั่งผลิต', 'error'); return }
+                    const product = products.value.find(p => p.id == editingOrder.value.productId)
+                    if (product) {
+                        editingOrder.value.productName = product.name
+                        editingOrder.value.productUnit = product.unit
+                    }
+                    editingOrder.value.outstandingQty = editingOrder.value.qty - (editingOrder.value.receivedQty || 0)
+                    // Recalculate materials based on new qty
+                    if (product && product.bom) {
+                        const ratio = editingOrder.value.qty / (product.baseQty || 1)
+                        editingOrder.value.materials = product.bom.map(m => ({ name: m.name, unit: m.unit, totalQty: Math.ceil(m.qty * ratio) }))
+                    }
+                    orders.value[idx] = JSON.parse(JSON.stringify(editingOrder.value))
+                    saveStorage()
+                    editingOrder.value = null
+                    showToast('✅ แก้ไขใบสั่งผลิตสำเร็จ!')
+                }
 
                 const closeOrder = () => {
                     if (!selectedShipmentOrder.value) return
@@ -1639,7 +1728,7 @@
                     editingRoundIdx, editingMaterials, combinedDate, sheetFilter, sheetData, sheetSummary, sheetLastUpdated,
                     sheetLoading, dateFrom, dateTo, productsWithBom, totalOutstanding, filteredSheetData, sheetProductList,
                     showToast, generateOrderNo, formatDate, addProduct, deleteProduct, editBom, saveEditBom, editingProduct, addMaterialToBom, selectSheetProduct,
-                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, closeOrder, reopenOrder, openShipmentModal,
+                    addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, editingOrder, editOrder, saveEditOrder, closeOrder, reopenOrder, openShipmentModal,
                     recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
                     editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
                     openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
