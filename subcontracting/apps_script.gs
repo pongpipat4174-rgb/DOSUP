@@ -41,6 +41,12 @@ function doGet(e) {
       return getProducts(ss)
     } else if (action === 'getConfig') {
       return getConfig(ss)
+    } else if (action === 'getPiecesPerBox') {
+      return getPiecesPerBoxAction(ss)
+    } else if (action === 'savePiecesPerBox') {
+      // Save piecesPerBoxMap via GET (avoids CORS issues with POST)
+      var data = JSON.parse(decodeURIComponent(e.parameter.data || '{}'))
+      return savePiecesPerBoxAction(ss, data)
     }
 
     return jsonResponse({ success: false, error: 'Unknown action' })
@@ -247,6 +253,32 @@ function getConfig(ss) {
     }
   }
   return jsonResponse({ success: true, config })
+}
+
+function savePiecesPerBoxAction(ss, data) {
+  var sheet = ss.getSheetByName('ppb_config')
+  if (!sheet) {
+    sheet = ss.insertSheet('ppb_config')
+  }
+  sheet.clear()
+  sheet.appendRow(['productName', 'piecesPerBox'])
+  for (var key in data) {
+    sheet.appendRow([key, data[key]])
+  }
+  return jsonResponse({ success: true, message: 'Saved ' + Object.keys(data).length + ' items' })
+}
+
+function getPiecesPerBoxAction(ss) {
+  var sheet = ss.getSheetByName('ppb_config')
+  if (!sheet) return jsonResponse({ success: true, data: {} })
+  var values = sheet.getDataRange().getValues()
+  var result = {}
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][0]) {
+      result[values[i][0]] = Number(values[i][1]) || 0
+    }
+  }
+  return jsonResponse({ success: true, data: result })
 }
 
 function jsonResponse(data) {

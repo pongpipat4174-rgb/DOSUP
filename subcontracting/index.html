@@ -1847,8 +1847,13 @@
                     const numValue = parseInt(value) || 0
                     piecesPerBoxMap.value[productName] = numValue
                     localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
-                    // Sync to cloud via products sync (piecesPerBoxMap embedded as special product)
-                    syncToSheet()
+                    // Sync to Apps Script via GET (no CORS issues)
+                    if (APPS_SCRIPT_URL) {
+                        const dataStr = encodeURIComponent(JSON.stringify(piecesPerBoxMap.value))
+                        fetch(APPS_SCRIPT_URL + '?action=savePiecesPerBox&data=' + dataStr)
+                            .then(() => console.log('✅ piecesPerBox synced to cloud'))
+                            .catch(err => console.warn('ppb sync failed:', err.message))
+                    }
                 }
 
                 const calculateTotalPieces = (item) => {
@@ -1861,6 +1866,23 @@
                 onMounted(async () => {
                     loadStorage(); fetchSheetData(); fetchPiecesPerBox();
                     if (APPS_SCRIPT_URL) {
+                        // Load piecesPerBoxMap from Apps Script (GET, CORS-friendly)
+                        try {
+                            const ppbRes = await fetch(APPS_SCRIPT_URL + '?action=getPiecesPerBox').then(r => r.json())
+                            if (ppbRes.success && ppbRes.data && Object.keys(ppbRes.data).length > 0) {
+                                piecesPerBoxMap.value = { ...piecesPerBoxMap.value, ...ppbRes.data }
+                                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                                console.log('✅ Loaded piecesPerBox from Apps Script:', Object.keys(ppbRes.data).length, 'items')
+                            } else if (Object.keys(piecesPerBoxMap.value).length > 0) {
+                                // Cloud empty, local has data -> upload to cloud
+                                const dataStr = encodeURIComponent(JSON.stringify(piecesPerBoxMap.value))
+                                fetch(APPS_SCRIPT_URL + '?action=savePiecesPerBox&data=' + dataStr)
+                                    .then(() => console.log('✅ piecesPerBox uploaded to cloud'))
+                                    .catch(() => { })
+                            }
+                        } catch (err) {
+                            console.log('⚠️ Apps Script ppb load failed:', err.message)
+                        }
                         await loadFromSheet(true)
                         setInterval(() => { loadFromSheet(true) }, 30000)
                     }
