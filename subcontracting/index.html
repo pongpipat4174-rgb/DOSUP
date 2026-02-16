@@ -1114,9 +1114,20 @@
                             products.value = productsRes.products || []
                         }
                         // Load piecesPerBoxMap from cloud
-                        if (configRes.success && configRes.config && configRes.config.piecesPerBoxMap) {
-                            piecesPerBoxMap.value = configRes.config.piecesPerBoxMap
+                        if (configRes.success && configRes.config && configRes.config.piecesPerBoxMap && Object.keys(configRes.config.piecesPerBoxMap).length > 0) {
+                            // Cloud has data → use it (merge with local to keep any local-only entries)
+                            const merged = { ...piecesPerBoxMap.value, ...configRes.config.piecesPerBoxMap }
+                            piecesPerBoxMap.value = merged
                             localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                        } else if (Object.keys(piecesPerBoxMap.value).length > 0) {
+                            // Cloud is empty but local has data → upload local to cloud (one-time migration)
+                            console.log('📤 Uploading local piecesPerBoxMap to cloud...')
+                            fetch(APPS_SCRIPT_URL, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'text/plain' },
+                                body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
+                            }).then(() => console.log('✅ piecesPerBoxMap uploaded to cloud'))
+                                .catch(err => console.warn('⚠️ Config upload failed:', err.message))
                         }
                         localStorage.setItem('sub_products', JSON.stringify(products.value))
                         localStorage.setItem('sub_orders', JSON.stringify(orders.value))
