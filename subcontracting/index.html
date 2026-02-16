@@ -1085,6 +1085,12 @@
                             headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'syncProducts', products: products.value })
                         })
+                        // Sync Config (piecesPerBoxMap)
+                        await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
+                        })
                         console.log('✅ Synced to Google Sheet')
                     } catch (err) {
                         console.warn('⚠️ Sheet sync failed:', err.message)
@@ -1096,15 +1102,21 @@
                     if (silent && (Date.now() - lastSyncTime) < 45000) { console.log('⏳ Skip auto-refresh (sync lock)'); return }
                     try {
                         if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
-                        const [ordersRes, productsRes] = await Promise.all([
+                        const [ordersRes, productsRes, configRes] = await Promise.all([
                             fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json()),
-                            fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
+                            fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json()),
+                            fetch(APPS_SCRIPT_URL + '?action=getConfig').then(r => r.json())
                         ])
                         if (ordersRes.success) {
                             orders.value = ordersRes.orders || []
                         }
                         if (productsRes.success) {
                             products.value = productsRes.products || []
+                        }
+                        // Load piecesPerBoxMap from cloud
+                        if (configRes.success && configRes.config && configRes.config.piecesPerBoxMap) {
+                            piecesPerBoxMap.value = configRes.config.piecesPerBoxMap
+                            localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
                         }
                         localStorage.setItem('sub_products', JSON.stringify(products.value))
                         localStorage.setItem('sub_orders', JSON.stringify(orders.value))
@@ -1787,6 +1799,14 @@
                     const numValue = parseInt(value) || 0
                     piecesPerBoxMap.value[productName] = numValue
                     localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                    // Sync to cloud so other devices get the same value
+                    if (APPS_SCRIPT_URL) {
+                        fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
+                        }).catch(err => console.warn('Config sync failed:', err.message))
+                    }
                 }
 
                 const calculateTotalPieces = (item) => {

@@ -20,6 +20,8 @@ function doPost(e) {
       return result
     } else if (action === 'syncProducts') {
       return syncProducts(ss, data.products)
+    } else if (action === 'syncConfig') {
+      return syncConfig(ss, data.config)
     }
 
     return jsonResponse({ success: false, error: 'Unknown action' })
@@ -37,6 +39,8 @@ function doGet(e) {
       return getOrders(ss)
     } else if (action === 'getProducts') {
       return getProducts(ss)
+    } else if (action === 'getConfig') {
+      return getConfig(ss)
     }
 
     return jsonResponse({ success: false, error: 'Unknown action' })
@@ -213,6 +217,36 @@ function getProducts(ss) {
   }
 
   return jsonResponse({ success: true, products })
+}
+
+function syncConfig(ss, config) {
+  let sheet = ss.getSheetByName('config')
+  if (!sheet) {
+    sheet = ss.insertSheet('config')
+  }
+  sheet.clear()
+  sheet.appendRow(['key', 'value'])
+  // config is an object like { piecesPerBoxMap: {...} }
+  for (const key in config) {
+    sheet.appendRow([key, JSON.stringify(config[key])])
+  }
+  return jsonResponse({ success: true, message: 'Config synced' })
+}
+
+function getConfig(ss) {
+  const sheet = ss.getSheetByName('config')
+  if (!sheet) return jsonResponse({ success: true, config: {} })
+  const data = sheet.getDataRange().getValues()
+  if (data.length <= 1) return jsonResponse({ success: true, config: {} })
+  const config = {}
+  for (let i = 1; i < data.length; i++) {
+    const key = data[i][0]
+    const val = data[i][1]
+    if (key) {
+      try { config[key] = JSON.parse(val) } catch { config[key] = val }
+    }
+  }
+  return jsonResponse({ success: true, config })
 }
 
 function jsonResponse(data) {
