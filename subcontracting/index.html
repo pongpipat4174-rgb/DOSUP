@@ -1822,7 +1822,15 @@
 
                 onMounted(async () => {
                     loadStorage(); fetchSheetData();
-                    if (APPS_SCRIPT_URL) { await loadFromSheet(true); setInterval(() => { loadFromSheet(true) }, 30000) }
+                    if (APPS_SCRIPT_URL) {
+                        await loadFromSheet(true)
+                        // Force sync piecesPerBoxMap to cloud if local has data (one-time upload)
+                        if (Object.keys(piecesPerBoxMap.value).length > 0) {
+                            console.log('📤 Force syncing piecesPerBoxMap to cloud on mount...')
+                            syncToSheet()
+                        }
+                        setInterval(() => { loadFromSheet(true) }, 30000)
+                    }
                 })
 
                 return {
