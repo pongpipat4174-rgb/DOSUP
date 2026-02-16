@@ -1526,6 +1526,42 @@
                 const SHEET_GID = '0'
                 const sheetLoading = ref(false)
 
+                // === โหลด ชิ้น/ลัง จาก Google Sheet tab "config" (JSONP, ไม่มี CORS) ===
+                const fetchPiecesPerBox = async () => {
+                    try {
+                        const callbackName = 'ppbCallback_' + Date.now()
+                        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&sheet=config`
+                        const dataPromise = new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => { reject(new Error('Timeout')) }, 10000)
+                            window[callbackName] = (response) => { clearTimeout(timeout); delete window[callbackName]; resolve(response) }
+                        })
+                        const script = document.createElement('script')
+                        script.src = url
+                        script.onerror = () => { console.log('⚠️ Config sheet not found') }
+                        document.body.appendChild(script)
+                        const response = await dataPromise
+                        document.body.removeChild(script)
+                        if (response && response.table) {
+                            const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
+                            let count = 0
+                            response.table.rows.forEach(row => {
+                                const obj = {}
+                                row.c.forEach((cell, idx) => { obj[headers[idx]] = cell ? (cell.f || cell.v || '') : '' })
+                                const productName = String(obj[headers[0]] || '').trim()
+                                const ppb = parseInt(obj[headers[1]]) || 0
+                                if (productName && ppb > 0) {
+                                    piecesPerBoxMap.value[productName] = ppb
+                                    count++
+                                }
+                            })
+                            localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                            console.log('✅ Loaded piecesPerBox from config sheet:', count, 'products')
+                        }
+                    } catch (err) {
+                        console.log('⚠️ Config sheet not available:', err.message, '(using localStorage fallback)')
+                    }
+                }
+
                 // === ดึงยอดรับเข้าจาก Sheet (match เลข JO ในหมายเหตุเท่านั้น) ===
                 const getReceivedFromSheet = (orderNo) => {
                     if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return 0
@@ -1823,14 +1859,9 @@
                 }
 
                 onMounted(async () => {
-                    loadStorage(); fetchSheetData();
+                    loadStorage(); fetchSheetData(); fetchPiecesPerBox();
                     if (APPS_SCRIPT_URL) {
                         await loadFromSheet(true)
-                        // Force sync piecesPerBoxMap to cloud if local has data (one-time upload)
-                        if (Object.keys(piecesPerBoxMap.value).length > 0) {
-                            console.log('📤 Force syncing piecesPerBoxMap to cloud on mount...')
-                            syncToSheet()
-                        }
                         setInterval(() => { loadFromSheet(true) }, 30000)
                     }
                 })
