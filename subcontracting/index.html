@@ -1079,19 +1079,23 @@
                             headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'syncOrders', orders: orders.value })
                         })
-                        // Sync Products
+                        // Sync Products + piecesPerBoxMap (embedded as special product)
+                        const configProduct = {
+                            id: '__piecesPerBoxConfig__',
+                            code: '__CONFIG__',
+                            name: '__piecesPerBoxMap__',
+                            unit: '',
+                            baseQty: 0,
+                            bom: Object.entries(piecesPerBoxMap.value).map(([name, qty]) => ({ name, qty: qty || 0, unit: 'ppb' })),
+                            createdAt: new Date().toISOString()
+                        }
+                        const productsToSync = [...products.value, configProduct]
                         await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'text/plain' },
-                            body: JSON.stringify({ action: 'syncProducts', products: products.value })
+                            body: JSON.stringify({ action: 'syncProducts', products: productsToSync })
                         })
-                        // Sync Config (piecesPerBoxMap)
-                        await fetch(APPS_SCRIPT_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'text/plain' },
-                            body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
-                        })
-                        console.log('✅ Synced to Google Sheet')
+                        console.log('✅ Synced to Google Sheet (including piecesPerBoxMap)')
                     } catch (err) {
                         console.warn('⚠️ Sheet sync failed:', err.message)
                     }
@@ -1102,32 +1106,27 @@
                     if (silent && (Date.now() - lastSyncTime) < 45000) { console.log('⏳ Skip auto-refresh (sync lock)'); return }
                     try {
                         if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
-                        const [ordersRes, productsRes, configRes] = await Promise.all([
+                        const [ordersRes, productsRes] = await Promise.all([
                             fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json()),
-                            fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json()),
-                            fetch(APPS_SCRIPT_URL + '?action=getConfig').then(r => r.json())
+                            fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
                         ])
                         if (ordersRes.success) {
                             orders.value = ordersRes.orders || []
                         }
                         if (productsRes.success) {
-                            products.value = productsRes.products || []
-                        }
-                        // Load piecesPerBoxMap from cloud
-                        if (configRes.success && configRes.config && configRes.config.piecesPerBoxMap && Object.keys(configRes.config.piecesPerBoxMap).length > 0) {
-                            // Cloud has data → use it (merge with local to keep any local-only entries)
-                            const merged = { ...piecesPerBoxMap.value, ...configRes.config.piecesPerBoxMap }
-                            piecesPerBoxMap.value = merged
-                            localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
-                        } else if (Object.keys(piecesPerBoxMap.value).length > 0) {
-                            // Cloud is empty but local has data → upload local to cloud (one-time migration)
-                            console.log('📤 Uploading local piecesPerBoxMap to cloud...')
-                            fetch(APPS_SCRIPT_URL, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'text/plain' },
-                                body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
-                            }).then(() => console.log('✅ piecesPerBoxMap uploaded to cloud'))
-                                .catch(err => console.warn('⚠️ Config upload failed:', err.message))
+                            const allProducts = productsRes.products || []
+                            // Extract piecesPerBoxMap from special config product
+                            const configProduct = allProducts.find(p => p.id === '__piecesPerBoxConfig__')
+                            if (configProduct && configProduct.bom && configProduct.bom.length > 0) {
+                                const cloudMap = {}
+                                configProduct.bom.forEach(item => { if (item.name) cloudMap[item.name] = item.qty || 0 })
+                                // Merge: cloud values override local
+                                piecesPerBoxMap.value = { ...piecesPerBoxMap.value, ...cloudMap }
+                                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                                console.log('✅ Loaded piecesPerBoxMap from cloud:', Object.keys(cloudMap).length, 'items')
+                            }
+                            // Filter out config product from display
+                            products.value = allProducts.filter(p => p.id !== '__piecesPerBoxConfig__')
                         }
                         localStorage.setItem('sub_products', JSON.stringify(products.value))
                         localStorage.setItem('sub_orders', JSON.stringify(orders.value))
@@ -1810,14 +1809,8 @@
                     const numValue = parseInt(value) || 0
                     piecesPerBoxMap.value[productName] = numValue
                     localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
-                    // Sync to cloud so other devices get the same value
-                    if (APPS_SCRIPT_URL) {
-                        fetch(APPS_SCRIPT_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'text/plain' },
-                            body: JSON.stringify({ action: 'syncConfig', config: { piecesPerBoxMap: piecesPerBoxMap.value } })
-                        }).catch(err => console.warn('Config sync failed:', err.message))
-                    }
+                    // Sync to cloud via products sync (piecesPerBoxMap embedded as special product)
+                    syncToSheet()
                 }
 
                 const calculateTotalPieces = (item) => {
