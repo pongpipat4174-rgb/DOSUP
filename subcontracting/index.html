@@ -1076,6 +1076,7 @@
                         // Sync Orders
                         await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
+                            mode: 'no-cors',
                             headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'syncOrders', orders: orders.value })
                         })
@@ -1092,6 +1093,7 @@
                         const productsToSync = [...products.value, configProduct]
                         await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
+                            mode: 'no-cors',
                             headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'syncProducts', products: productsToSync })
                         })
