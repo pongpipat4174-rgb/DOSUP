@@ -649,6 +649,11 @@
                     <input v-model="newShipment.date" type="date"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
                 </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">📝 หมายเหตุ</label>
+                    <textarea v-model="newShipment.remark" rows="2" placeholder="กรอกหมายเหตุ (ถ้ามี)"
+                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none resize-none"></textarea>
+                </div>
                 <!-- Materials for this shipment -->
                 <div v-if="newShipment.materials && newShipment.materials.length > 0" class="mb-4">
                     <p class="text-sm font-medium text-gray-700 mb-2">📋 วัตถุดิบที่ส่งรอบนี้:</p>
@@ -687,6 +692,7 @@
                                         {{ m.name }} <strong>{{ (m.sendQty||0).toLocaleString() }}</strong>{{ mi <
                                             ship.materials.length - 1 ? ', ' : '' }} </span>
                                 </template>
+                                <p v-if="ship.remark" class="mt-1 text-gray-500 italic">📝 {{ ship.remark }}</p>
                             </div>
                             <!-- Edit mode -->
                             <div v-else class="space-y-1 mt-2">
@@ -1293,7 +1299,7 @@
                 const openShipmentModal = (order) => {
                     selectedShipmentOrder.value = order
                     const remainingQty = getRemainingToShip(order)
-                    newShipment.value = { qty: remainingQty > 0 ? remainingQty : 0, date: new Date().toISOString().split('T')[0], materials: [] }
+                    newShipment.value = { qty: remainingQty > 0 ? remainingQty : 0, date: new Date().toISOString().split('T')[0], materials: [], remark: '' }
                     recalcShipMaterials()
                     showShipmentModal.value = true
                 }
@@ -1372,6 +1378,7 @@
                         const shipmentData = {
                             date: newShipment.value.date,
                             round: order.shipments.length + 1,
+                            remark: newShipment.value.remark || '',
                             materials: validMats.map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty }))
                         }
                         order.shipments.push(shipmentData)
@@ -1462,6 +1469,10 @@
                     </div>
                     <h3 style="font-size:14px;">📦 รายการวัตถุดิบที่ส่ง - รอบที่ ${roundNo}</h3>
                     ${matsHTML}
+                    <div style="margin-top:15px;padding:12px 15px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;">
+                        <p style="font-size:13px;color:#92400e;font-weight:bold;margin-bottom:5px;">📝 หมายเหตุ:</p>
+                        <p style="font-size:13px;color:#78350f;min-height:20px;">${ship.remark || '-'}</p>
+                    </div>
                     <div class="signature">
                         <div class="sig-box">
                             <canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas>
@@ -1510,6 +1521,9 @@
                                 ordersHTML += `<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">${mi + 1}</td><td style="border:1px solid #ddd;padding:6px;">${m.name}</td><td style="border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">${m.unit || ''}</td></tr>`
                             })
                             ordersHTML += '</tbody></table>'
+                        }
+                        if (ship.remark) {
+                            ordersHTML += `<div style="margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:13px;"><span style="color:#92400e;font-weight:bold;">📝 หมายเหตุ:</span> <span style="color:#78350f;">${ship.remark}</span></div>`
                         }
                     })
                     printWin.document.write(`<!DOCTYPE html><html><head><title>${dnNo}</title><style>body{font-family:'Sarabun',sans-serif;padding:30px;color:#333}h1{color:#4f46e5;border-bottom:3px solid #4f46e5;padding-bottom:10px}h2{color:#333;margin:0}table{font-size:14px}.header-grid{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}.signature{display:flex;justify-content:space-around;margin-top:40px;gap:20px;flex-wrap:wrap}.sig-box{text-align:center;flex:1;min-width:200px}.sig-canvas{border:2px dashed #ccc;border-radius:8px;cursor:crosshair;touch-action:none;width:100%;max-width:300px;height:150px;background:#fafafa}.sig-label{margin-top:8px;font-weight:bold;color:#555}.sig-clear{margin-top:5px;padding:4px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:12px}.sig-clear:hover{background:#fee2e2;color:#ef4444}.print-btn{display:block;margin:30px auto 0;padding:12px 40px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}.print-btn:hover{opacity:0.9}@media print{.sig-clear,.print-btn{display:none!important}.sig-canvas{border:2px solid #eee}}</style></head><body><div class="header-grid"><div><h1 style="margin-bottom:5px;">🚚 ใบส่งของรวม</h1><h2 style="color:#4f46e5;font-size:20px;">${dnNo}</h2></div><div style="text-align:right;color:#6b7280;font-size:13px;"><p>วันที่ส่ง: ${formatDate(targetDate)}</p><p>จำนวน: ${matchedOrders.length} รายการ</p><p>พิมพ์: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div></div>${ordersHTML}<div class="signature"><div class="sig-box"><canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้ส่งของ</p><button class="sig-clear" onclick="clearSig('sigSender')">ล้างลายเซ็น</button></div><div class="sig-box"><canvas id="sigReceiver" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้รับของ</p><button class="sig-clear" onclick="clearSig('sigReceiver')">ล้างลายเซ็น</button></div></div><button class="print-btn" onclick="window.print()">🖨️ พิมพ์ใบส่งของ</button></body></html>`)
