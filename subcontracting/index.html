@@ -649,21 +649,23 @@
                     <input v-model="newShipment.date" type="date"
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl">
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">📝 หมายเหตุ</label>
-                    <textarea v-model="newShipment.remark" rows="2" placeholder="กรอกหมายเหตุ (ถ้ามี)"
-                        class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 outline-none resize-none"></textarea>
-                </div>
                 <!-- Materials for this shipment -->
                 <div v-if="newShipment.materials && newShipment.materials.length > 0" class="mb-4">
                     <p class="text-sm font-medium text-gray-700 mb-2">📋 วัตถุดิบที่ส่งรอบนี้:</p>
-                    <div class="bg-amber-50 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto">
-                        <div v-for="(mat, idx) in newShipment.materials" :key="idx" class="flex items-center gap-2">
-                            <span class="flex-1 text-sm">{{ mat.name }}</span>
-                            <span class="text-xs text-gray-400">เหลือ {{ mat.remaining?.toLocaleString() }}</span>
-                            <input v-model.number="mat.sendQty" type="number" :max="mat.remaining"
-                                class="w-24 px-2 py-1 border-2 border-gray-200 rounded-lg text-sm text-center">
-                            <span class="text-xs text-gray-500 w-10">{{ mat.unit }}</span>
+                    <div class="bg-amber-50 rounded-xl p-3 space-y-3 max-h-64 overflow-y-auto">
+                        <div v-for="(mat, idx) in newShipment.materials" :key="idx"
+                            class="bg-white rounded-lg p-2 border border-amber-200">
+                            <div class="flex items-center gap-2">
+                                <span class="flex-1 text-sm font-medium">{{ mat.name }}</span>
+                                <span class="text-xs text-gray-400">เหลือ {{ mat.remaining?.toLocaleString() }}</span>
+                                <input v-model.number="mat.sendQty" type="number" :max="mat.remaining"
+                                    class="w-24 px-2 py-1 border-2 border-gray-200 rounded-lg text-sm text-center">
+                                <span class="text-xs text-gray-500 w-10">{{ mat.unit }}</span>
+                            </div>
+                            <div class="mt-1">
+                                <input v-model="mat.remark" type="text" placeholder="หมายเหตุ (ถ้ามี)"
+                                    class="w-full px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-600 focus:border-indigo-400 outline-none">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -688,19 +690,24 @@
                             <!-- View mode -->
                             <div v-if="editingRoundIdx !== idx" class="text-xs text-gray-600">
                                 <template v-if="ship.materials && ship.materials.length">
-                                    <span v-for="(m, mi) in ship.materials" :key="mi">
-                                        {{ m.name }} <strong>{{ (m.sendQty||0).toLocaleString() }}</strong>{{ mi <
-                                            ship.materials.length - 1 ? ', ' : '' }} </span>
+                                    <div v-for="(m, mi) in ship.materials" :key="mi"
+                                        class="flex items-center gap-1 py-0.5">
+                                        <span>{{ m.name }} <strong>{{ (m.sendQty||0).toLocaleString() }}</strong></span>
+                                        <span v-if="m.remark" class="text-gray-400 italic ml-1">({{ m.remark }})</span>
+                                    </div>
                                 </template>
-                                <p v-if="ship.remark" class="mt-1 text-gray-500 italic">📝 {{ ship.remark }}</p>
                             </div>
                             <!-- Edit mode -->
                             <div v-else class="space-y-1 mt-2">
-                                <div v-for="(m, mi) in editingMaterials" :key="mi" class="flex items-center gap-2">
-                                    <span class="flex-1 text-xs">{{ m.name }}</span>
-                                    <input v-model.number="m.sendQty" type="number"
-                                        class="w-24 px-2 py-1 border-2 border-amber-300 rounded text-xs text-center bg-amber-50">
-                                    <span class="text-xs text-gray-400 w-8">{{ m.unit }}</span>
+                                <div v-for="(m, mi) in editingMaterials" :key="mi" class="bg-amber-50 rounded p-1.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex-1 text-xs">{{ m.name }}</span>
+                                        <input v-model.number="m.sendQty" type="number"
+                                            class="w-24 px-2 py-1 border-2 border-amber-300 rounded text-xs text-center bg-white">
+                                        <span class="text-xs text-gray-400 w-8">{{ m.unit }}</span>
+                                    </div>
+                                    <input v-model="m.remark" type="text" placeholder="หมายเหตุ"
+                                        class="w-full mt-1 px-2 py-0.5 border border-amber-200 rounded text-xs text-gray-600 bg-white">
                                 </div>
                                 <div class="flex gap-2 mt-2">
                                     <button @click="editingRoundIdx = -1"
@@ -1378,8 +1385,7 @@
                         const shipmentData = {
                             date: newShipment.value.date,
                             round: order.shipments.length + 1,
-                            remark: newShipment.value.remark || '',
-                            materials: validMats.map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty }))
+                            materials: validMats.map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty, remark: m.remark || '' }))
                         }
                         order.shipments.push(shipmentData)
                         saveStorage()
@@ -1406,7 +1412,7 @@
                 const saveShipmentEdit = () => {
                     const order = orders.value.find(o => o.id === selectedShipmentOrder.value.id)
                     if (order && order.shipments[editingRoundIdx.value]) {
-                        order.shipments[editingRoundIdx.value].materials = editingMaterials.value.filter(m => m.sendQty > 0).map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty }))
+                        order.shipments[editingRoundIdx.value].materials = editingMaterials.value.filter(m => m.sendQty > 0).map(m => ({ name: m.name, unit: m.unit, sendQty: m.sendQty, remark: m.remark || '' }))
                         saveStorage()
                         selectedShipmentOrder.value = { ...order }
                         showToast('แก้ไขรอบ ' + (editingRoundIdx.value + 1) + ' สำเร็จ!')
@@ -1421,9 +1427,9 @@
                     const printWin = window.open('', '_blank', 'width=800,height=900')
                     let matsHTML = '<p style="color:#999;">ไม่มีข้อมูลวัตถุดิบ</p>'
                     if (ship.materials && ship.materials.length > 0) {
-                        matsHTML = '<table style="width:100%;border-collapse:collapse;margin-top:10px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:8px;">ลำดับ</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:8px;">หน่วย</th></tr></thead><tbody>'
+                        matsHTML = '<table style="width:100%;border-collapse:collapse;margin-top:10px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:8px;">ลำดับ</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:8px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:8px;">หน่วย</th><th style="border:1px solid #ddd;padding:8px;text-align:left;">หมายเหตุ</th></tr></thead><tbody>'
                         ship.materials.forEach((m, idx) => {
-                            matsHTML += `<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">${idx + 1}</td><td style="border:1px solid #ddd;padding:8px;">${m.name}</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">${m.unit || ''}</td></tr>`
+                            matsHTML += `<tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">${idx + 1}</td><td style="border:1px solid #ddd;padding:8px;">${m.name}</td><td style="border:1px solid #ddd;padding:8px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:8px;text-align:center;">${m.unit || ''}</td><td style="border:1px solid #ddd;padding:8px;font-size:12px;color:#78350f;">${m.remark || ''}</td></tr>`
                         })
                         matsHTML += '</tbody></table>'
                     }
@@ -1469,10 +1475,6 @@
                     </div>
                     <h3 style="font-size:14px;">📦 รายการวัตถุดิบที่ส่ง - รอบที่ ${roundNo}</h3>
                     ${matsHTML}
-                    <div style="margin-top:15px;padding:12px 15px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;">
-                        <p style="font-size:13px;color:#92400e;font-weight:bold;margin-bottom:5px;">📝 หมายเหตุ:</p>
-                        <p style="font-size:13px;color:#78350f;min-height:20px;">${ship.remark || '-'}</p>
-                    </div>
                     <div class="signature">
                         <div class="sig-box">
                             <canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas>
@@ -1516,14 +1518,11 @@
                     matchedOrders.forEach(({ order, ship, roundIdx }) => {
                         ordersHTML += `<h3 style="font-size:14px;margin-top:20px;color:#4f46e5;">📋 ${order.orderNo} — ${order.productName} (รอบ ${roundIdx + 1})</h3>`
                         if (ship.materials && ship.materials.length > 0) {
-                            ordersHTML += '<table style="width:100%;border-collapse:collapse;margin-top:5px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:6px;">ลำดับ</th><th style="border:1px solid #ddd;padding:6px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:6px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:6px;">หน่วย</th></tr></thead><tbody>'
+                            ordersHTML += '<table style="width:100%;border-collapse:collapse;margin-top:5px;"><thead><tr style="background:#e0f2fe;"><th style="border:1px solid #ddd;padding:6px;">ลำดับ</th><th style="border:1px solid #ddd;padding:6px;text-align:left;">ชื่อวัตถุดิบ</th><th style="border:1px solid #ddd;padding:6px;text-align:right;">จำนวนที่ส่ง</th><th style="border:1px solid #ddd;padding:6px;">หน่วย</th><th style="border:1px solid #ddd;padding:6px;text-align:left;">หมายเหตุ</th></tr></thead><tbody>'
                             ship.materials.forEach((m, mi) => {
-                                ordersHTML += `<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">${mi + 1}</td><td style="border:1px solid #ddd;padding:6px;">${m.name}</td><td style="border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">${m.unit || ''}</td></tr>`
+                                ordersHTML += `<tr><td style="border:1px solid #ddd;padding:6px;text-align:center;">${mi + 1}</td><td style="border:1px solid #ddd;padding:6px;">${m.name}</td><td style="border:1px solid #ddd;padding:6px;text-align:right;font-weight:bold;color:#0369a1;">${(m.sendQty || 0).toLocaleString()}</td><td style="border:1px solid #ddd;padding:6px;text-align:center;">${m.unit || ''}</td><td style="border:1px solid #ddd;padding:6px;font-size:12px;color:#78350f;">${m.remark || ''}</td></tr>`
                             })
                             ordersHTML += '</tbody></table>'
-                        }
-                        if (ship.remark) {
-                            ordersHTML += `<div style="margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:13px;"><span style="color:#92400e;font-weight:bold;">📝 หมายเหตุ:</span> <span style="color:#78350f;">${ship.remark}</span></div>`
                         }
                     })
                     printWin.document.write(`<!DOCTYPE html><html><head><title>${dnNo}</title><style>body{font-family:'Sarabun',sans-serif;padding:30px;color:#333}h1{color:#4f46e5;border-bottom:3px solid #4f46e5;padding-bottom:10px}h2{color:#333;margin:0}table{font-size:14px}.header-grid{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}.signature{display:flex;justify-content:space-around;margin-top:40px;gap:20px;flex-wrap:wrap}.sig-box{text-align:center;flex:1;min-width:200px}.sig-canvas{border:2px dashed #ccc;border-radius:8px;cursor:crosshair;touch-action:none;width:100%;max-width:300px;height:150px;background:#fafafa}.sig-label{margin-top:8px;font-weight:bold;color:#555}.sig-clear{margin-top:5px;padding:4px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#888;cursor:pointer;font-size:12px}.sig-clear:hover{background:#fee2e2;color:#ef4444}.print-btn{display:block;margin:30px auto 0;padding:12px 40px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer}.print-btn:hover{opacity:0.9}@media print{.sig-clear,.print-btn{display:none!important}.sig-canvas{border:2px solid #eee}}</style></head><body><div class="header-grid"><div><h1 style="margin-bottom:5px;">🚚 ใบส่งของรวม</h1><h2 style="color:#4f46e5;font-size:20px;">${dnNo}</h2></div><div style="text-align:right;color:#6b7280;font-size:13px;"><p>วันที่ส่ง: ${formatDate(targetDate)}</p><p>จำนวน: ${matchedOrders.length} รายการ</p><p>พิมพ์: ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p></div></div>${ordersHTML}<div class="signature"><div class="sig-box"><canvas id="sigSender" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้ส่งของ</p><button class="sig-clear" onclick="clearSig('sigSender')">ล้างลายเซ็น</button></div><div class="sig-box"><canvas id="sigReceiver" class="sig-canvas" width="300" height="150"></canvas><p class="sig-label">ผู้รับของ</p><button class="sig-clear" onclick="clearSig('sigReceiver')">ล้างลายเซ็น</button></div></div><button class="print-btn" onclick="window.print()">🖨️ พิมพ์ใบส่งของ</button></body></html>`)
