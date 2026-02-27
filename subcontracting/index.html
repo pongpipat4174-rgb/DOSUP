@@ -1074,14 +1074,21 @@
                 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3LhMJ0p3KhgG_jVAGLsZhO5D5cjpllyFrbMQhR5QQyLltP9HA4z--dqmlYwp1qDMR3Q/exec'
 
                 let lastSyncTime = 0
+                let syncPending = false
+                let syncRetryCount = 0
+                const MAX_SYNC_RETRIES = 3
+
                 const saveStorage = () => {
                     localStorage.setItem('sub_products', JSON.stringify(products.value))
                     localStorage.setItem('sub_orders', JSON.stringify(orders.value))
                     localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value))
+                    // Save timestamp of last local change
+                    localStorage.setItem('sub_lastLocalChange', Date.now().toString())
                     lastSyncTime = Date.now()
+                    syncPending = true
                     syncToSheet()
                 }
-                // Deduplicate orders: keep the latest version per id (prefer 'completed' status)
+                // Deduplicate orders: keep the version with more data (more shipments)
                 const deduplicateOrders = (orderList) => {
                     const map = new Map()
                     orderList.forEach(o => {
@@ -1089,21 +1096,65 @@
                         if (!existing) {
                             map.set(o.id, o)
                         } else {
-                            // Prefer 'completed' status (closed order should stay closed)
-                            if (o.status === 'completed') {
+                            // Keep the version with more shipments (more data = newer)
+                            const existingShips = existing.shipments?.length || 0
+                            const newShips = o.shipments?.length || 0
+                            if (newShips > existingShips) {
                                 map.set(o.id, o)
+                            } else if (newShips === existingShips) {
+                                // Same shipments count: prefer 'completed' status
+                                if (o.status === 'completed') {
+                                    map.set(o.id, o)
+                                }
                             }
                         }
                     })
                     return [...map.values()]
                 }
+
+                // Smart merge: combine local and cloud data, keeping the best version of each order
+                const smartMergeOrders = (cloudOrders) => {
+                    const localOrders = orders.value
+                    const merged = new Map()
+
+                    // Add all cloud orders first
+                    cloudOrders.forEach(o => merged.set(o.id, o))
+
+                    // Merge local orders - keep if local has more data
+                    localOrders.forEach(localOrder => {
+                        const cloudOrder = merged.get(localOrder.id)
+                        if (!cloudOrder) {
+                            // Only in local, keep it
+                            merged.set(localOrder.id, localOrder)
+                        } else {
+                            // Compare: keep the version with more shipments
+                            const localShips = localOrder.shipments?.length || 0
+                            const cloudShips = cloudOrder.shipments?.length || 0
+                            if (localShips > cloudShips) {
+                                merged.set(localOrder.id, localOrder)
+                                console.log(`🔄 Kept local version of ${localOrder.orderNo} (${localShips} shipments vs cloud ${cloudShips})`)
+                            } else if (localShips === cloudShips && localOrder.status === 'completed' && cloudOrder.status !== 'completed') {
+                                merged.set(localOrder.id, localOrder)
+                            }
+                            // Also check if local has BPR/Lot/MFD/EXP that cloud doesn't
+                            const best = merged.get(localOrder.id)
+                            if (!best.bpr && localOrder.bpr) best.bpr = localOrder.bpr
+                            if (!best.lot && localOrder.lot) best.lot = localOrder.lot
+                            if (!best.mfd && localOrder.mfd) best.mfd = localOrder.mfd
+                            if (!best.exp && localOrder.exp) best.exp = localOrder.exp
+                        }
+                    })
+
+                    return [...merged.values()]
+                }
+
                 const loadStorage = () => { try { const p = localStorage.getItem('sub_products'); const o = localStorage.getItem('sub_orders'); const h = localStorage.getItem('sub_history'); if (p) products.value = JSON.parse(p); if (o) orders.value = deduplicateOrders(JSON.parse(o)); if (h) receiveHistory.value = JSON.parse(h) } catch (e) { console.error(e) } }
 
                 const syncToSheet = async () => {
                     if (!APPS_SCRIPT_URL) return
                     try {
-                        // Sync Orders
-                        await fetch(APPS_SCRIPT_URL, {
+                        // Sync Orders - ใช้ POST แต่ verify ด้วย GET callback
+                        const syncResult = await fetch(APPS_SCRIPT_URL, {
                             method: 'POST',
                             mode: 'no-cors',
                             headers: { 'Content-Type': 'text/plain' },
@@ -1126,15 +1177,49 @@
                             headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'syncProducts', products: productsToSync })
                         })
-                        console.log('✅ Synced to Google Sheet (including piecesPerBoxMap)')
+
+                        // Verify sync: ตรวจว่า cloud ได้รับข้อมูลจริง
+                        setTimeout(async () => {
+                            try {
+                                const verifyRes = await fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json())
+                                if (verifyRes.success && verifyRes.orders) {
+                                    const cloudCount = verifyRes.orders.length
+                                    const localCount = orders.value.length
+                                    if (cloudCount >= localCount) {
+                                        syncPending = false
+                                        syncRetryCount = 0
+                                        console.log(`✅ Sync verified! Cloud: ${cloudCount}, Local: ${localCount}`)
+                                    } else {
+                                        console.warn(`⚠️ Sync incomplete! Cloud: ${cloudCount}, Local: ${localCount}. Will retry...`)
+                                        if (syncRetryCount < MAX_SYNC_RETRIES) {
+                                            syncRetryCount++
+                                            setTimeout(() => syncToSheet(), 5000)
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('⚠️ Sync verify failed:', e.message)
+                            }
+                        }, 3000)
+
+                        console.log('📤 Sync request sent to Google Sheet')
                     } catch (err) {
                         console.warn('⚠️ Sheet sync failed:', err.message)
+                        syncPending = true
+                        // Retry after 10 seconds
+                        if (syncRetryCount < MAX_SYNC_RETRIES) {
+                            syncRetryCount++
+                            setTimeout(() => syncToSheet(), 10000)
+                            showToast('⚠️ Sync ล้มเหลว กำลังลองใหม่...', 'error')
+                        }
                     }
                 }
 
                 const loadFromSheet = async (silent) => {
                     if (!APPS_SCRIPT_URL) { if (!silent) showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
-                    if (silent && (Date.now() - lastSyncTime) < 45000) { console.log('⏳ Skip auto-refresh (sync lock)'); return }
+                    // ⚡ ถ้ามี sync ค้างอยู่ ห้าม load ทับ (ป้องกันข้อมูลหาย)
+                    if (syncPending) { console.log('⏳ Skip auto-refresh (sync pending - ป้องกันข้อมูลหาย)'); return }
+                    if (silent && (Date.now() - lastSyncTime) < 60000) { console.log('⏳ Skip auto-refresh (sync lock 60s)'); return }
                     try {
                         if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
                         const [ordersRes, productsRes] = await Promise.all([
@@ -1142,7 +1227,10 @@
                             fetch(APPS_SCRIPT_URL + '?action=getProducts').then(r => r.json())
                         ])
                         if (ordersRes.success) {
-                            orders.value = deduplicateOrders(ordersRes.orders || [])
+                            const cloudOrders = ordersRes.orders || []
+                            // ⚡ Smart Merge: ไม่ทับข้อมูล local ที่มี shipments มากกว่า
+                            orders.value = smartMergeOrders(cloudOrders)
+                            console.log(`🔄 Smart merged: ${cloudOrders.length} cloud + ${orders.value.length} result`)
                         }
                         if (productsRes.success) {
                             const allProducts = productsRes.products || []
@@ -1151,7 +1239,6 @@
                             if (configProduct && configProduct.bom && configProduct.bom.length > 0) {
                                 const cloudMap = {}
                                 configProduct.bom.forEach(item => { if (item.name) cloudMap[item.name] = item.qty || 0 })
-                                // Merge: cloud values override local
                                 piecesPerBoxMap.value = { ...piecesPerBoxMap.value, ...cloudMap }
                                 localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
                                 console.log('✅ Loaded piecesPerBoxMap from cloud:', Object.keys(cloudMap).length, 'items')
@@ -1913,7 +2000,7 @@
                             console.log('⚠️ Apps Script ppb load failed:', err.message)
                         }
                         await loadFromSheet(true)
-                        setInterval(() => { loadFromSheet(true) }, 30000)
+                        setInterval(() => { loadFromSheet(true) }, 60000) // เปลี่ยนเป็นทุก 60 วินาที ลดโอกาสทับข้อมูล
                     }
                 })
 
