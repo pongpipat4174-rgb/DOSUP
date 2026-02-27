@@ -276,7 +276,7 @@ function getOrders(ss) {
     const order = {}
     headers.forEach((h, idx) => {
       if (h === 'materials' || h === 'shipments') {
-        try { order[h] = JSON.parse(row[idx] || '[]') } catch { order[h] = [] }
+        try { order[h] = JSON.parse(row[idx] || '[]') } catch(e) { order[h] = [] }
       } else if (h === 'qty' || h === 'receivedQty' || h === 'outstandingQty') {
         order[h] = Number(row[idx]) || 0
       } else {
@@ -304,7 +304,7 @@ function getProducts(ss) {
     const product = {}
     headers.forEach((h, idx) => {
       if (h === 'bom') {
-        try { product[h] = JSON.parse(row[idx] || '[]') } catch { product[h] = [] }
+        try { product[h] = JSON.parse(row[idx] || '[]') } catch(e) { product[h] = [] }
       } else if (h === 'baseQty') {
         product[h] = Number(row[idx]) || 0
       } else {
@@ -341,7 +341,7 @@ function getConfig(ss) {
     const key = data[i][0]
     const val = data[i][1]
     if (key) {
-      try { config[key] = JSON.parse(val) } catch { config[key] = val }
+      try { config[key] = JSON.parse(val) } catch(e) { config[key] = val }
     }
   }
   return jsonResponse({ success: true, config })
