@@ -57,41 +57,112 @@ function doGet(e) {
 
 function syncOrders(ss, orders) {
   let sheet = ss.getSheetByName('orders')
+  const headers = ['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'bpr', 'lot', 'mfd', 'exp', 'createdAt', 'updatedAt']
+  
   if (!sheet) {
     sheet = ss.insertSheet('orders')
+    sheet.appendRow(headers)
   }
 
-  // Always clear entire sheet and rewrite header
-  sheet.clear()
-  const headers = ['id', 'orderNo', 'productId', 'productName', 'productUnit', 'qty', 'subcontractor', 'dueDate', 'status', 'receivedQty', 'outstandingQty', 'materials', 'shipments', 'bpr', 'lot', 'mfd', 'exp', 'createdAt', 'updatedAt']
-  sheet.appendRow(headers)
+  // ⚡ SAFE UPSERT: ไม่ลบข้อมูลทั้ง sheet แต่อัปเดตทีละแถว
+  // อ่านข้อมูลปัจจุบันจาก sheet
+  const existingData = sheet.getDataRange().getValues()
+  const existingHeaders = existingData[0] || headers
+  const idIdx = existingHeaders.indexOf('id')
+  const shipmentsIdx = existingHeaders.indexOf('shipments')
+  
+  // สร้าง map ของ order ที่มีอยู่ใน sheet (เก็บ row index)
+  const existingMap = new Map()
+  for (let i = 1; i < existingData.length; i++) {
+    const id = String(existingData[i][idIdx] || '')
+    if (id) {
+      existingMap.set(id, {
+        rowIndex: i + 1, // 1-indexed
+        shipments: existingData[i][shipmentsIdx] || '[]'
+      })
+    }
+  }
 
-  // Write all orders
+  let updated = 0, inserted = 0, skipped = 0
+
   orders.forEach(order => {
-    sheet.appendRow([
-      order.id || '',
-      order.orderNo || '',
-      order.productId || '',
-      order.productName || '',
-      order.productUnit || '',
-      order.qty || 0,
-      order.subcontractor || '',
-      order.dueDate || '',
-      order.status || 'pending',
-      order.receivedQty || 0,
-      order.outstandingQty || 0,
-      JSON.stringify(order.materials || []),
-      JSON.stringify(order.shipments || []),
-      order.bpr || '',
-      order.lot || '',
-      order.mfd || '',
-      order.exp || '',
-      order.createdAt || new Date().toISOString(),
-      new Date().toISOString()
-    ])
+    if (!order.id) return
+    
+    const existing = existingMap.get(String(order.id))
+    const incomingShipments = order.shipments || []
+    const incomingShipCount = Array.isArray(incomingShipments) ? incomingShipments.length : 0
+    
+    // ป้องกันข้อมูลหาย: ถ้า cloud มี shipments มากกว่า incoming → ไม่ทับ
+    if (existing) {
+      let cloudShipCount = 0
+      try {
+        const cloudShips = JSON.parse(existing.shipments || '[]')
+        cloudShipCount = Array.isArray(cloudShips) ? cloudShips.length : 0
+      } catch(e) {}
+      
+      // ถ้า incoming มี shipments น้อยกว่า cloud → ใช้ shipments จาก cloud
+      let shipmentsToSave = JSON.stringify(incomingShipments)
+      if (incomingShipCount < cloudShipCount) {
+        shipmentsToSave = existing.shipments // เก็บ shipments จาก cloud
+        skipped++
+      }
+      
+      // อัปเดตแถวที่มีอยู่
+      const rowData = [
+        order.id || '',
+        order.orderNo || '',
+        order.productId || '',
+        order.productName || '',
+        order.productUnit || '',
+        order.qty || 0,
+        order.subcontractor || '',
+        order.dueDate || '',
+        order.status || 'pending',
+        order.receivedQty || 0,
+        order.outstandingQty || 0,
+        JSON.stringify(order.materials || []),
+        shipmentsToSave,
+        order.bpr || '',
+        order.lot || '',
+        order.mfd || '',
+        order.exp || '',
+        order.createdAt || new Date().toISOString(),
+        new Date().toISOString()
+      ]
+      sheet.getRange(existing.rowIndex, 1, 1, headers.length).setValues([rowData])
+      existingMap.delete(String(order.id)) // ลบออกจาก map (ที่เหลือคือ order ที่ไม่ได้ส่งมา)
+      updated++
+    } else {
+      // เพิ่มแถวใหม่
+      sheet.appendRow([
+        order.id || '',
+        order.orderNo || '',
+        order.productId || '',
+        order.productName || '',
+        order.productUnit || '',
+        order.qty || 0,
+        order.subcontractor || '',
+        order.dueDate || '',
+        order.status || 'pending',
+        order.receivedQty || 0,
+        order.outstandingQty || 0,
+        JSON.stringify(order.materials || []),
+        JSON.stringify(order.shipments || []),
+        order.bpr || '',
+        order.lot || '',
+        order.mfd || '',
+        order.exp || '',
+        order.createdAt || new Date().toISOString(),
+        new Date().toISOString()
+      ])
+      inserted++
+    }
   })
+  
+  // หมายเหตุ: order ที่เหลืออยู่ใน existingMap คือ order ที่ไม่ได้ส่งมา
+  // ❌ ไม่ลบ! เก็บไว้ใน sheet เพื่อป้องกันข้อมูลหาย
 
-  return jsonResponse({ success: true, message: 'Orders synced: ' + orders.length })
+  return jsonResponse({ success: true, message: 'Orders synced: updated=' + updated + ', inserted=' + inserted + ', shipments_preserved=' + skipped })
 }
 
 function syncDeliveryPlans(ss, orders) {
@@ -143,19 +214,30 @@ function syncDeliveryPlans(ss, orders) {
 }
 
 function syncProducts(ss, products) {
+  const headers = ['id', 'code', 'name', 'unit', 'baseQty', 'bom', 'createdAt']
   let sheet = ss.getSheetByName('products')
   if (!sheet) {
     sheet = ss.insertSheet('products')
-    sheet.appendRow(['id', 'code', 'name', 'unit', 'baseQty', 'bom', 'createdAt'])
+    sheet.appendRow(headers)
   }
 
-  const lastRow = sheet.getLastRow()
-  if (lastRow > 1) {
-    sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent()
+  // ⚡ SAFE UPSERT: อ่านข้อมูลปัจจุบันจาก sheet
+  const existingData = sheet.getDataRange().getValues()
+  const existingHeaders = existingData[0] || headers
+  const idIdx = existingHeaders.indexOf('id')
+  
+  const existingMap = new Map()
+  for (let i = 1; i < existingData.length; i++) {
+    const id = String(existingData[i][idIdx] || '')
+    if (id) existingMap.set(id, i + 1) // 1-indexed row
   }
+
+  let updated = 0, inserted = 0
 
   products.forEach(product => {
-    sheet.appendRow([
+    if (!product.id) return
+    
+    const rowData = [
       product.id || '',
       product.code || '',
       product.name || '',
@@ -163,10 +245,20 @@ function syncProducts(ss, products) {
       product.baseQty || 0,
       JSON.stringify(product.bom || []),
       product.createdAt || new Date().toISOString()
-    ])
+    ]
+    
+    const existingRow = existingMap.get(String(product.id))
+    if (existingRow) {
+      sheet.getRange(existingRow, 1, 1, headers.length).setValues([rowData])
+      existingMap.delete(String(product.id))
+      updated++
+    } else {
+      sheet.appendRow(rowData)
+      inserted++
+    }
   })
 
-  return jsonResponse({ success: true, message: 'Products synced: ' + products.length })
+  return jsonResponse({ success: true, message: 'Products synced: updated=' + updated + ', inserted=' + inserted })
 }
 
 function getOrders(ss) {
