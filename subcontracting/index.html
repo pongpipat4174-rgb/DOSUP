@@ -1079,66 +1079,33 @@
                 // Track order IDs that have unsaved local changes (not yet confirmed by cloud)
                 const savePendingIds = new Set()
 
-                // Helper: safe localStorage.setItem with quota handling
-                const safeSave = (key, value) => {
+                // ⚡ Cloud-first: ข้อมูลหลักเก็บที่ Google Sheet เท่านั้น
+                // localStorage เก็บแค่ pendingIds (เล็กมาก) สำหรับ track ว่า order ไหนยัง sync ไม่เสร็จ
+                const savePendingToLocal = () => {
                     try {
-                        localStorage.setItem(key, value)
-                        return true
+                        localStorage.setItem('sub_pendingIds', JSON.stringify([...savePendingIds]))
                     } catch (e) {
-                        if (e.name === 'QuotaExceededError' || e.code === 22) {
-                            console.warn(`⚠️ localStorage full! Freeing space for key: ${key}`)
-                            // Step 1: Trim receive history to last 30
-                            if (receiveHistory.value.length > 30) {
-                                receiveHistory.value = receiveHistory.value.slice(-30)
-                                try { localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value)) } catch (e2) { }
-                            }
-                            // Step 2: Remove stale/old keys
-                            const keysToRemove = []
-                            for (let i = 0; i < localStorage.length; i++) {
-                                const k = localStorage.key(i)
-                                if (k && !k.startsWith('sub_') && !k.startsWith('subcontracting_')) {
-                                    keysToRemove.push(k)
-                                }
-                            }
-                            keysToRemove.forEach(k => { try { localStorage.removeItem(k) } catch (e2) { } })
-                            // Step 3: Try again
-                            try {
-                                localStorage.setItem(key, value)
-                                console.log('✅ Saved after freeing space')
-                                return true
-                            } catch (e2) {
-                                // Step 4: Last resort - remove history entirely
-                                try { localStorage.removeItem('sub_history') } catch (e3) { }
-                                receiveHistory.value = receiveHistory.value.slice(-10)
-                                try {
-                                    localStorage.setItem(key, value)
-                                    return true
-                                } catch (e3) {
-                                    console.error('❌ localStorage critically full! Cannot save:', key)
-                                    showToast('❌ พื้นที่เก็บข้อมูลเต็ม! กรุณาลบข้อมูลเก่า', 'error')
-                                    return false
-                                }
-                            }
-                        }
-                        console.error('Save error:', e)
-                        return false
+                        console.warn('⚠️ Cannot save pendingIds to localStorage:', e.message)
                     }
                 }
 
+                // Clean up old localStorage data (one-time migration to cloud-first)
+                const cleanupLocalStorage = () => {
+                    const keysToRemove = ['sub_products', 'sub_orders', 'sub_history', 'sub_lastLocalChange', 'subcontracting_piecesPerBox']
+                    keysToRemove.forEach(k => {
+                        try { localStorage.removeItem(k) } catch (e) { }
+                    })
+                    console.log('🧹 Cleaned up old localStorage data (now using Google Sheet only)')
+                }
+
                 const saveStorage = (changedOrderIds) => {
-                    // Priority: orders > pendingIds > products > history
-                    safeSave('sub_orders', JSON.stringify(orders.value))
-                    safeSave('sub_lastLocalChange', Date.now().toString())
                     // Mark pending IDs
                     if (changedOrderIds && changedOrderIds.length > 0) {
                         changedOrderIds.forEach(id => savePendingIds.add(id))
                     } else {
                         orders.value.forEach(o => savePendingIds.add(o.id))
                     }
-                    safeSave('sub_pendingIds', JSON.stringify([...savePendingIds]))
-                    // Lower priority saves
-                    safeSave('sub_products', JSON.stringify(products.value))
-                    safeSave('sub_history', JSON.stringify(receiveHistory.value))
+                    savePendingToLocal()
                     lastSyncTime = Date.now()
                     syncPending = true
                     syncToSheet()
@@ -1215,23 +1182,21 @@
 
                 const loadStorage = () => {
                     try {
-                        const p = localStorage.getItem('sub_products')
-                        const o = localStorage.getItem('sub_orders')
-                        const h = localStorage.getItem('sub_history')
+                        // ⚡ Cloud-first: เก็บแค่ pendingIds ใน localStorage
                         const pendingStr = localStorage.getItem('sub_pendingIds')
-                        if (p) products.value = JSON.parse(p)
-                        if (o) orders.value = deduplicateOrders(JSON.parse(o)).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-                        if (h) receiveHistory.value = JSON.parse(h)
-                        // Restore pending IDs from localStorage (survive page refresh)
                         if (pendingStr) {
                             try {
                                 const ids = JSON.parse(pendingStr)
                                 ids.forEach(id => savePendingIds.add(id))
                                 if (ids.length > 0) {
                                     syncPending = true
-                                    console.log(`🔄 Restored ${ids.length} pending order IDs from localStorage`)
+                                    console.log(`🔄 Restored ${ids.length} pending order IDs`)
                                 }
                             } catch (e) { }
+                        }
+                        // One-time: clean up old localStorage data
+                        if (localStorage.getItem('sub_orders') || localStorage.getItem('sub_products')) {
+                            cleanupLocalStorage()
                         }
                     } catch (e) { console.error(e) }
                 }
@@ -1330,7 +1295,7 @@
                                 if (allFound) {
                                     console.log(`✅ Cloud confirmed all ${savePendingIds.size} pending orders. Clearing pending.`)
                                     savePendingIds.clear()
-                                    localStorage.removeItem('sub_pendingIds')
+                                    savePendingToLocal()
                                     syncPending = false
                                 } else {
                                     console.warn(`🛡️ Cloud missing some pending orders. Keeping local versions protected.`)
@@ -1348,15 +1313,12 @@
                                 const cloudMap = {}
                                 configProduct.bom.forEach(item => { if (item.name) cloudMap[item.name] = item.qty || 0 })
                                 piecesPerBoxMap.value = { ...piecesPerBoxMap.value, ...cloudMap }
-                                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
                                 console.log('✅ Loaded piecesPerBoxMap from cloud:', Object.keys(cloudMap).length, 'items')
                             }
                             // Filter out config product from display
                             products.value = allProducts.filter(p => p.id !== '__piecesPerBoxConfig__')
                         }
-                        // ⚡ ALWAYS save merged result to localStorage (smartMerge already protects pending)
-                        localStorage.setItem('sub_products', JSON.stringify(products.value))
-                        localStorage.setItem('sub_orders', JSON.stringify(orders.value))
+                        // ⚡ Cloud-first: ไม่ต้องเซฟ localStorage แล้ว (ข้อมูลอยู่ใน memory + cloud)
                         if (!silent) showToast('โหลดจาก Google Sheet สำเร็จ! (สินค้า: ' + products.value.length + ', ใบสั่งผลิต: ' + orders.value.length + ')')
                     } catch (err) {
                         if (!silent) showToast('โหลดจาก Sheet ล้มเหลว: ' + err.message, 'error')
@@ -1765,7 +1727,7 @@
                                 }
                                 if (allSynced) {
                                     savePendingIds.clear()
-                                    localStorage.removeItem('sub_pendingIds')
+                                    savePendingToLocal()
                                     syncPending = false
                                     console.log('✅ All pending orders synced before refresh!')
                                 } else {
@@ -1813,11 +1775,11 @@
                                     count++
                                 }
                             })
-                            localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                            // ⚡ Cloud-first: ไม่ต้องเซฟ localStorage
                             console.log('✅ Loaded piecesPerBox from config sheet:', count, 'products')
                         }
                     } catch (err) {
-                        console.log('⚠️ Config sheet not available:', err.message, '(using localStorage fallback)')
+                        console.log('⚠️ Config sheet not available:', err.message)
                     }
                 }
 
@@ -2098,14 +2060,14 @@
                 }
 
                 // Pieces per box configuration
-                const piecesPerBoxMap = ref(JSON.parse(localStorage.getItem('subcontracting_piecesPerBox') || '{}'))
+                const piecesPerBoxMap = ref({})
 
                 const getPiecesPerBox = (productName) => { return piecesPerBoxMap.value[productName] || 0 }
 
                 const setPiecesPerBox = (productName, value) => {
                     const numValue = parseInt(value) || 0
                     piecesPerBoxMap.value[productName] = numValue
-                    localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
+                    // ⚡ Cloud-first: sync ผ่าน Apps Script เท่านั้น
                     // Sync to Apps Script via GET (no CORS issues)
                     if (APPS_SCRIPT_URL) {
                         const dataStr = encodeURIComponent(JSON.stringify(piecesPerBoxMap.value))
@@ -2131,9 +2093,9 @@
                 })
 
                 onMounted(async () => {
-                    // ⚡ CRITICAL: Load localStorage FIRST (contains unsaved data)
+                    // ⚡ Cloud-first: โหลด pendingIds จาก localStorage (เล็กมาก)
                     loadStorage()
-                    console.log(`📦 Loaded from localStorage: ${orders.value.length} orders, ${savePendingIds.size} pending sync`)
+                    console.log(`📦 Pending sync: ${savePendingIds.size} orders`)
                     fetchSheetData(); fetchPiecesPerBox();
                     if (APPS_SCRIPT_URL) {
                         // Load piecesPerBoxMap from Apps Script (GET, CORS-friendly)
@@ -2141,14 +2103,7 @@
                             const ppbRes = await fetch(APPS_SCRIPT_URL + '?action=getPiecesPerBox').then(r => r.json())
                             if (ppbRes.success && ppbRes.data && Object.keys(ppbRes.data).length > 0) {
                                 piecesPerBoxMap.value = { ...piecesPerBoxMap.value, ...ppbRes.data }
-                                localStorage.setItem('subcontracting_piecesPerBox', JSON.stringify(piecesPerBoxMap.value))
                                 console.log('✅ Loaded piecesPerBox from Apps Script:', Object.keys(ppbRes.data).length, 'items')
-                            } else if (Object.keys(piecesPerBoxMap.value).length > 0) {
-                                // Cloud empty, local has data -> upload to cloud
-                                const dataStr = encodeURIComponent(JSON.stringify(piecesPerBoxMap.value))
-                                fetch(APPS_SCRIPT_URL + '?action=savePiecesPerBox&data=' + dataStr)
-                                    .then(() => console.log('✅ piecesPerBox uploaded to cloud'))
-                                    .catch(() => { })
                             }
                         } catch (err) {
                             console.log('⚠️ Apps Script ppb load failed:', err.message)
@@ -2160,9 +2115,9 @@
                             // Wait a bit for POST to arrive at cloud
                             await new Promise(resolve => setTimeout(resolve, 6000))
                         }
-                        // loadFromSheet จะ smartMerge + ตรวจ pending ใน cloud ก่อน clear
+                        // ⚡ โหลดข้อมูลทั้งหมดจาก Google Sheet (source of truth)
                         await loadFromSheet(true)
-                        setInterval(() => { loadFromSheet(true) }, 120000) // ทุก 2 นาที (ลดโอกาสทับข้อมูล)
+                        setInterval(() => { loadFromSheet(true) }, 120000) // ทุก 2 นาที
                     }
                 })
 
