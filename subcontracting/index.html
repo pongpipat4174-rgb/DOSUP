@@ -1219,30 +1219,25 @@
                             body: JSON.stringify({ action: 'syncProducts', products: productsToSync })
                         })
 
-                        // Verify sync: ตรวจว่า cloud ได้รับข้อมูลจริง
+                        // Verify sync: ตรวจว่า cloud ได้รับข้อมูลจริง (LOG ONLY - ห้าม clear pending ที่นี่!)
                         setTimeout(async () => {
                             try {
                                 const verifyRes = await fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json())
                                 if (verifyRes.success && verifyRes.orders) {
                                     const cloudCount = verifyRes.orders.length
                                     const localCount = orders.value.length
-                                    // Verify each pending order exists in cloud
                                     const cloudIds = new Set(verifyRes.orders.map(o => String(o.id)))
-                                    let allPendingInCloud = true
+                                    let missingCount = 0
                                     for (const pendingId of savePendingIds) {
-                                        if (!cloudIds.has(String(pendingId))) {
-                                            allPendingInCloud = false
-                                            console.warn(`⚠️ Pending order ${pendingId} NOT found in cloud yet`)
-                                        }
+                                        if (!cloudIds.has(String(pendingId))) missingCount++
                                     }
-                                    if (cloudCount >= localCount && allPendingInCloud) {
+                                    if (missingCount === 0 && cloudCount >= localCount) {
+                                        // ⚠️ DO NOT clear savePendingIds here! Let loadFromSheet handle it.
                                         syncPending = false
-                                        savePendingIds.clear()
-                                        localStorage.removeItem('sub_pendingIds')
                                         syncRetryCount = 0
-                                        console.log(`✅ Sync verified! Cloud: ${cloudCount}, Local: ${localCount}. All pending cleared.`)
+                                        console.log(`✅ Sync POST verified! Cloud: ${cloudCount}, Local: ${localCount}. (pending will clear on next load)`)
                                     } else {
-                                        console.warn(`⚠️ Sync incomplete! Cloud: ${cloudCount}, Local: ${localCount}, pendingInCloud: ${allPendingInCloud}. Will retry...`)
+                                        console.warn(`⚠️ Sync incomplete! Cloud: ${cloudCount}, Local: ${localCount}, missing: ${missingCount}. Will retry...`)
                                         if (syncRetryCount < MAX_SYNC_RETRIES) {
                                             syncRetryCount++
                                             setTimeout(() => syncToSheet(), 5000)
@@ -1269,12 +1264,6 @@
 
                 const loadFromSheet = async (silent) => {
                     if (!APPS_SCRIPT_URL) { if (!silent) showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
-                    // ⚡ ถ้ามี sync ค้างอยู่ ห้าม load ทับ (ป้องกันข้อมูลหาย)
-                    if (syncPending || savePendingIds.size > 0) {
-                        console.log(`⏳ Skip refresh (sync pending - ${savePendingIds.size} unsaved orders - ป้องกันข้อมูลหาย)`)
-                        if (!silent) showToast(`⏳ มี ${savePendingIds.size} รายการยังไม่ sync เสร็จ กรุณารอสักครู่...`, 'info')
-                        return
-                    }
                     if (silent && (Date.now() - lastSyncTime) < 60000) { console.log('⏳ Skip auto-refresh (sync lock 60s)'); return }
                     // ⚡ ป้องกันกดรีเฟรชทันทีหลังสร้างใบงาน (รอให้ cloud ประมวลผลก่อน)
                     if (!silent && (Date.now() - lastSyncTime) < 10000) { console.log('⏳ Skip manual refresh (recent save 10s)'); showToast('⏳ เพิ่งบันทึกข้อมูล กรุณารอ 10 วินาที...', 'info'); return }
@@ -1286,9 +1275,25 @@
                         ])
                         if (ordersRes.success) {
                             const cloudOrders = ordersRes.orders || []
-                            // ⚡ Smart Merge: ไม่ทับข้อมูล local ที่มี shipments มากกว่า หรือมี pending changes
+                            // ⚡ ตรวจสอบ: ถ้า cloud มี pending orders ครบ → clear pending
+                            if (savePendingIds.size > 0) {
+                                const cloudIds = new Set(cloudOrders.map(o => String(o.id)))
+                                let allFound = true
+                                for (const pid of savePendingIds) {
+                                    if (!cloudIds.has(String(pid))) { allFound = false; break }
+                                }
+                                if (allFound) {
+                                    console.log(`✅ Cloud confirmed all ${savePendingIds.size} pending orders. Clearing pending.`)
+                                    savePendingIds.clear()
+                                    localStorage.removeItem('sub_pendingIds')
+                                    syncPending = false
+                                } else {
+                                    console.warn(`🛡️ Cloud missing some pending orders. Keeping local versions protected.`)
+                                }
+                            }
+                            // ⚡ Smart Merge: ไม่ทับข้อมูล local ที่มี pending changes
                             orders.value = smartMergeOrders(cloudOrders)
-                            console.log(`🔄 Smart merged: ${cloudOrders.length} cloud + ${orders.value.length} result (pending: ${savePendingIds.size})`)
+                            console.log(`🔄 Smart merged: ${cloudOrders.length} cloud → ${orders.value.length} result (pending: ${savePendingIds.size})`)
                         }
                         if (productsRes.success) {
                             const allProducts = productsRes.products || []
@@ -1304,15 +1309,9 @@
                             // Filter out config product from display
                             products.value = allProducts.filter(p => p.id !== '__piecesPerBoxConfig__')
                         }
-                        // ⚡ Save to localStorage only if no pending changes exist
-                        if (savePendingIds.size === 0) {
-                            localStorage.setItem('sub_products', JSON.stringify(products.value))
-                            localStorage.setItem('sub_orders', JSON.stringify(orders.value))
-                        } else {
-                            // Only save products (less risky), keep orders in localStorage untouched
-                            localStorage.setItem('sub_products', JSON.stringify(products.value))
-                            console.log('⚠️ Skipped saving orders to localStorage (pending IDs exist)')
-                        }
+                        // ⚡ ALWAYS save merged result to localStorage (smartMerge already protects pending)
+                        localStorage.setItem('sub_products', JSON.stringify(products.value))
+                        localStorage.setItem('sub_orders', JSON.stringify(orders.value))
                         if (!silent) showToast('โหลดจาก Google Sheet สำเร็จ! (สินค้า: ' + products.value.length + ', ใบสั่งผลิต: ' + orders.value.length + ')')
                     } catch (err) {
                         if (!silent) showToast('โหลดจาก Sheet ล้มเหลว: ' + err.message, 'error')
@@ -1702,11 +1701,11 @@
 
                 const forceLoadFromDatabase = async () => {
                     // ⚡ ถ้ามี pending sync → force sync ก่อนแล้วค่อย load
-                    if (syncPending || savePendingIds.size > 0) {
-                        showToast('⏳ กำลัง sync ข้อมูลที่ค้างก่อน...', 'info')
+                    if (savePendingIds.size > 0) {
+                        showToast(`⏳ กำลัง sync ${savePendingIds.size} รายการที่ค้างก่อน...`, 'info')
                         await syncToSheet()
                         // Wait for cloud to process
-                        await new Promise(resolve => setTimeout(resolve, 5000))
+                        await new Promise(resolve => setTimeout(resolve, 6000))
                         // Verify sync completed
                         try {
                             const verifyRes = await fetch(APPS_SCRIPT_URL + '?action=getOrders').then(r => r.json())
@@ -2078,6 +2077,14 @@
                     return totalPieces.toLocaleString()
                 }
 
+                // ⚡ Warn user if they try to close/refresh with unsaved data
+                window.addEventListener('beforeunload', (e) => {
+                    if (savePendingIds.size > 0) {
+                        e.preventDefault()
+                        e.returnValue = 'มีข้อมูลที่ยัง sync ไม่เสร็จ ต้องการออกจากหน้านี้?'
+                    }
+                })
+
                 onMounted(async () => {
                     // ⚡ CRITICAL: Load localStorage FIRST (contains unsaved data)
                     loadStorage()
@@ -2101,15 +2108,16 @@
                         } catch (err) {
                             console.log('⚠️ Apps Script ppb load failed:', err.message)
                         }
-                        // ⚡ If there are pending changes, sync UP first before loading from cloud
+                        // ⚡ If there are pending changes, sync UP first (fire and forget)
                         if (savePendingIds.size > 0) {
-                            console.log(`🔄 Found ${savePendingIds.size} pending orders - syncing UP before loading cloud data...`)
-                            await syncToSheet()
-                            // Wait for cloud to process the sync
-                            await new Promise(resolve => setTimeout(resolve, 5000))
+                            console.log(`🔄 Found ${savePendingIds.size} pending orders - syncing UP first...`)
+                            syncToSheet() // fire-and-forget, don't await
+                            // Wait a bit for POST to arrive at cloud
+                            await new Promise(resolve => setTimeout(resolve, 6000))
                         }
+                        // loadFromSheet จะ smartMerge + ตรวจ pending ใน cloud ก่อน clear
                         await loadFromSheet(true)
-                        setInterval(() => { loadFromSheet(true) }, 60000) // เปลี่ยนเป็นทุก 60 วินาที ลดโอกาสทับข้อมูล
+                        setInterval(() => { loadFromSheet(true) }, 120000) // ทุก 2 นาที (ลดโอกาสทับข้อมูล)
                     }
                 })
 
