@@ -1113,6 +1113,22 @@
                     syncPending = true
                     syncToSheet()
                 }
+
+                // ⚡ ลบข้อมูลจาก cloud โดยตรง (ลบเฉพาะ ID ที่ระบุ)
+                const deleteFromCloud = async (action, ids) => {
+                    if (!APPS_SCRIPT_URL || !ids || ids.length === 0) return
+                    try {
+                        await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({ action: action, ids: ids })
+                        })
+                        console.log(`🗑️ Delete request sent: ${action} ids=${ids.join(',')}`)
+                    } catch (err) {
+                        console.warn('⚠️ Delete from cloud failed:', err.message)
+                    }
+                }
                 // Deduplicate orders: keep the version with more data (more shipments)
                 const deduplicateOrders = (orderList) => {
                     const map = new Map()
@@ -1357,7 +1373,16 @@
                     saveStorage(); showToast('เพิ่มสินค้าสำเร็จ!')
                 }
 
-                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id != id); deletedIds.add(String(id)); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteProduct = (id) => {
+                    if (confirm('ต้องการลบสินค้านี้?')) {
+                        products.value = products.value.filter(p => p.id != id)
+                        deletedIds.add(String(id))
+                        savePendingToLocal()
+                        deleteFromCloud('deleteProducts', [String(id)])
+                        syncToSheet() // sync remaining products
+                        showToast('ลบสำเร็จ')
+                    }
+                }
 
                 const editingProduct = ref(null)
                 const editBom = (product) => { editingProduct.value = JSON.parse(JSON.stringify(product)) }
@@ -1437,7 +1462,16 @@
                     orders.value.unshift(order); saveStorage([order.id]); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
                 }
 
-                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id != id); savePendingIds.delete(id); deletedIds.add(String(id)); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteOrder = (id) => {
+                    if (confirm('ต้องการลบ?')) {
+                        orders.value = orders.value.filter(o => o.id != id)
+                        savePendingIds.delete(id)
+                        deletedIds.add(String(id))
+                        savePendingToLocal()
+                        deleteFromCloud('deleteOrders', [String(id)])
+                        showToast('ลบสำเร็จ')
+                    }
+                }
 
                 const editingOrder = ref(null)
                 const editOrder = (order) => { editingOrder.value = JSON.parse(JSON.stringify(order)) }

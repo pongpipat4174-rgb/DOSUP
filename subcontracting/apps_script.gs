@@ -22,6 +22,10 @@ function doPost(e) {
       return syncProducts(ss, data.products)
     } else if (action === 'syncConfig') {
       return syncConfig(ss, data.config)
+    } else if (action === 'deleteOrders') {
+      return deleteOrdersById(ss, data.ids || [])
+    } else if (action === 'deleteProducts') {
+      return deleteProductsById(ss, data.ids || [])
     }
 
     return jsonResponse({ success: false, error: 'Unknown action' })
@@ -159,22 +163,73 @@ function syncOrders(ss, orders) {
     }
   })
   
-  // ⚡ Cloud-first: ลบ order ที่ไม่ได้ส่งมา (= ถูกลบที่ client แล้ว)
-  // ลบจากล่างขึ้นบน เพื่อไม่ให้ row index เลื่อน
-  var deleted = 0
+  // ⚡ SAFE: ไม่ลบ order ที่ไม่อยู่ในรายการที่ส่งมา (ใช้ deleteOrders action แทน)
+
+  return jsonResponse({ success: true, message: 'Orders synced: updated=' + updated + ', inserted=' + inserted + ', shipments_preserved=' + skipped })
+}
+
+// ⚡ ลบ order เฉพาะ ID ที่ระบุมาเท่านั้น (ปลอดภัย ไม่กระทบข้อมูลอื่น)
+function deleteOrdersById(ss, ids) {
+  if (!ids || ids.length === 0) return jsonResponse({ success: true, message: 'No IDs to delete' })
+  var sheet = ss.getSheetByName('orders')
+  if (!sheet) return jsonResponse({ success: true, message: 'No orders sheet' })
+  
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var idIdx = headers.indexOf('id')
+  var idsToDelete = new Set(ids.map(function(id) { return String(id) }))
+  
+  // หา row ที่ต้องลบ (เก็บ index จากล่างขึ้นบน)
   var rowsToDelete = []
-  existingMap.forEach(function(val, id) {
-    rowsToDelete.push(val.rowIndex)
-  })
-  rowsToDelete.sort(function(a, b) { return b - a }) // descending
+  for (var i = 1; i < data.length; i++) {
+    var rowId = String(data[i][idIdx] || '')
+    if (idsToDelete.has(rowId)) {
+      rowsToDelete.push(i + 1) // 1-indexed
+    }
+  }
+  
+  // ลบจากล่างขึ้นบน เพื่อไม่ให้ row index เลื่อน
+  rowsToDelete.sort(function(a, b) { return b - a })
+  var deleted = 0
   rowsToDelete.forEach(function(rowIdx) {
     try {
       sheet.deleteRow(rowIdx)
       deleted++
     } catch(e) {}
   })
+  
+  return jsonResponse({ success: true, message: 'Deleted ' + deleted + ' orders', deleted: deleted })
+}
 
-  return jsonResponse({ success: true, message: 'Orders synced: updated=' + updated + ', inserted=' + inserted + ', deleted=' + deleted + ', shipments_preserved=' + skipped })
+// ⚡ ลบ product เฉพาะ ID
+function deleteProductsById(ss, ids) {
+  if (!ids || ids.length === 0) return jsonResponse({ success: true, message: 'No IDs to delete' })
+  var sheet = ss.getSheetByName('products')
+  if (!sheet) return jsonResponse({ success: true, message: 'No products sheet' })
+  
+  var data = sheet.getDataRange().getValues()
+  var headers = data[0]
+  var idIdx = headers.indexOf('id')
+  var idsToDelete = new Set(ids.map(function(id) { return String(id) }))
+  
+  var rowsToDelete = []
+  for (var i = 1; i < data.length; i++) {
+    var rowId = String(data[i][idIdx] || '')
+    if (idsToDelete.has(rowId)) {
+      rowsToDelete.push(i + 1)
+    }
+  }
+  
+  rowsToDelete.sort(function(a, b) { return b - a })
+  var deleted = 0
+  rowsToDelete.forEach(function(rowIdx) {
+    try {
+      sheet.deleteRow(rowIdx)
+      deleted++
+    } catch(e) {}
+  })
+  
+  return jsonResponse({ success: true, message: 'Deleted ' + deleted + ' products', deleted: deleted })
 }
 
 function syncDeliveryPlans(ss, orders) {
