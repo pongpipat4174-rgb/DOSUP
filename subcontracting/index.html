@@ -1079,21 +1079,66 @@
                 // Track order IDs that have unsaved local changes (not yet confirmed by cloud)
                 const savePendingIds = new Set()
 
+                // Helper: safe localStorage.setItem with quota handling
+                const safeSave = (key, value) => {
+                    try {
+                        localStorage.setItem(key, value)
+                        return true
+                    } catch (e) {
+                        if (e.name === 'QuotaExceededError' || e.code === 22) {
+                            console.warn(`⚠️ localStorage full! Freeing space for key: ${key}`)
+                            // Step 1: Trim receive history to last 30
+                            if (receiveHistory.value.length > 30) {
+                                receiveHistory.value = receiveHistory.value.slice(-30)
+                                try { localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value)) } catch (e2) { }
+                            }
+                            // Step 2: Remove stale/old keys
+                            const keysToRemove = []
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const k = localStorage.key(i)
+                                if (k && !k.startsWith('sub_') && !k.startsWith('subcontracting_')) {
+                                    keysToRemove.push(k)
+                                }
+                            }
+                            keysToRemove.forEach(k => { try { localStorage.removeItem(k) } catch (e2) { } })
+                            // Step 3: Try again
+                            try {
+                                localStorage.setItem(key, value)
+                                console.log('✅ Saved after freeing space')
+                                return true
+                            } catch (e2) {
+                                // Step 4: Last resort - remove history entirely
+                                try { localStorage.removeItem('sub_history') } catch (e3) { }
+                                receiveHistory.value = receiveHistory.value.slice(-10)
+                                try {
+                                    localStorage.setItem(key, value)
+                                    return true
+                                } catch (e3) {
+                                    console.error('❌ localStorage critically full! Cannot save:', key)
+                                    showToast('❌ พื้นที่เก็บข้อมูลเต็ม! กรุณาลบข้อมูลเก่า', 'error')
+                                    return false
+                                }
+                            }
+                        }
+                        console.error('Save error:', e)
+                        return false
+                    }
+                }
+
                 const saveStorage = (changedOrderIds) => {
-                    localStorage.setItem('sub_products', JSON.stringify(products.value))
-                    localStorage.setItem('sub_orders', JSON.stringify(orders.value))
-                    localStorage.setItem('sub_history', JSON.stringify(receiveHistory.value))
-                    // Save timestamp of last local change
-                    localStorage.setItem('sub_lastLocalChange', Date.now().toString())
-                    // Mark all current order IDs as pending (safe: always track all)
+                    // Priority: orders > pendingIds > products > history
+                    safeSave('sub_orders', JSON.stringify(orders.value))
+                    safeSave('sub_lastLocalChange', Date.now().toString())
+                    // Mark pending IDs
                     if (changedOrderIds && changedOrderIds.length > 0) {
                         changedOrderIds.forEach(id => savePendingIds.add(id))
                     } else {
-                        // If no specific IDs given, mark all orders as pending
                         orders.value.forEach(o => savePendingIds.add(o.id))
                     }
-                    // Persist pending IDs in localStorage so they survive page refresh
-                    localStorage.setItem('sub_pendingIds', JSON.stringify([...savePendingIds]))
+                    safeSave('sub_pendingIds', JSON.stringify([...savePendingIds]))
+                    // Lower priority saves
+                    safeSave('sub_products', JSON.stringify(products.value))
+                    safeSave('sub_history', JSON.stringify(receiveHistory.value))
                     lastSyncTime = Date.now()
                     syncPending = true
                     syncToSheet()
