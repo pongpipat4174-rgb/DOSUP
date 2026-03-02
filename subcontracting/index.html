@@ -364,8 +364,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="order in activeOrders.slice(0,10)" :key="order.id"
-                                    class="border-b hover:bg-gray-50">
+                                <tr v-for="order in activeOrders" :key="order.id" class="border-b hover:bg-gray-50">
                                     <td class="px-4 py-3">
                                         <span class="font-medium text-indigo-600">{{ order.orderNo }}</span>
                                         <p v-if="order.bpr" class="text-xs text-purple-500">BPR: {{ order.bpr }}</p>
@@ -1145,10 +1144,11 @@
                         }
                     })
 
-                    return [...merged.values()]
+                    // Sort by createdAt descending so newest orders always appear first
+                    return [...merged.values()].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
                 }
 
-                const loadStorage = () => { try { const p = localStorage.getItem('sub_products'); const o = localStorage.getItem('sub_orders'); const h = localStorage.getItem('sub_history'); if (p) products.value = JSON.parse(p); if (o) orders.value = deduplicateOrders(JSON.parse(o)); if (h) receiveHistory.value = JSON.parse(h) } catch (e) { console.error(e) } }
+                const loadStorage = () => { try { const p = localStorage.getItem('sub_products'); const o = localStorage.getItem('sub_orders'); const h = localStorage.getItem('sub_history'); if (p) products.value = JSON.parse(p); if (o) orders.value = deduplicateOrders(JSON.parse(o)).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)); if (h) receiveHistory.value = JSON.parse(h) } catch (e) { console.error(e) } }
 
                 const syncToSheet = async () => {
                     if (!APPS_SCRIPT_URL) return
@@ -1218,8 +1218,10 @@
                 const loadFromSheet = async (silent) => {
                     if (!APPS_SCRIPT_URL) { if (!silent) showToast('ยังไม่ได้ตั้ง URL ของ Apps Script', 'error'); return }
                     // ⚡ ถ้ามี sync ค้างอยู่ ห้าม load ทับ (ป้องกันข้อมูลหาย)
-                    if (syncPending) { console.log('⏳ Skip auto-refresh (sync pending - ป้องกันข้อมูลหาย)'); return }
+                    if (syncPending) { console.log('⏳ Skip auto-refresh (sync pending - ป้องกันข้อมูลหาย)'); if (!silent) showToast('⏳ กำลัง sync อยู่ กรุณารอสักครู่...', 'info'); return }
                     if (silent && (Date.now() - lastSyncTime) < 60000) { console.log('⏳ Skip auto-refresh (sync lock 60s)'); return }
+                    // ⚡ ป้องกันกดรีเฟรชทันทีหลังสร้างใบงาน (รอให้ cloud ประมวลผลก่อน)
+                    if (!silent && (Date.now() - lastSyncTime) < 10000) { console.log('⏳ Skip manual refresh (recent save 10s)'); showToast('⏳ เพิ่งบันทึกข้อมูล กรุณารอ 10 วินาที...', 'info'); return }
                     try {
                         if (!silent) showToast('กำลังโหลดจาก Google Sheet...', 'info')
                         const [ordersRes, productsRes] = await Promise.all([
