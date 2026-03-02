@@ -1078,14 +1078,17 @@
                 const MAX_SYNC_RETRIES = 3
                 // Track order IDs that have unsaved local changes (not yet confirmed by cloud)
                 const savePendingIds = new Set()
+                // Track deleted IDs so smart merge won't bring them back from cloud
+                const deletedIds = new Set()
 
                 // ⚡ Cloud-first: ข้อมูลหลักเก็บที่ Google Sheet เท่านั้น
-                // localStorage เก็บแค่ pendingIds (เล็กมาก) สำหรับ track ว่า order ไหนยัง sync ไม่เสร็จ
+                // localStorage เก็บแค่ pendingIds + deletedIds (เล็กมาก)
                 const savePendingToLocal = () => {
                     try {
                         localStorage.setItem('sub_pendingIds', JSON.stringify([...savePendingIds]))
+                        localStorage.setItem('sub_deletedIds', JSON.stringify([...deletedIds]))
                     } catch (e) {
-                        console.warn('⚠️ Cannot save pendingIds to localStorage:', e.message)
+                        console.warn('⚠️ Cannot save to localStorage:', e.message)
                     }
                 }
 
@@ -1140,8 +1143,14 @@
                     const localOrders = orders.value
                     const merged = new Map()
 
-                    // Add all cloud orders first
-                    cloudOrders.forEach(o => merged.set(o.id, o))
+                    // Add cloud orders — BUT skip any that were deleted locally
+                    cloudOrders.forEach(o => {
+                        if (!deletedIds.has(String(o.id))) {
+                            merged.set(o.id, o)
+                        } else {
+                            console.log(`🗑️ Excluded deleted order from cloud: ${o.orderNo || o.id}`)
+                        }
+                    })
 
                     // Merge local orders - keep if local has more data or has unsaved changes
                     localOrders.forEach(localOrder => {
@@ -1182,8 +1191,9 @@
 
                 const loadStorage = () => {
                     try {
-                        // ⚡ Cloud-first: เก็บแค่ pendingIds ใน localStorage
+                        // ⚡ Cloud-first: เก็บแค่ pendingIds + deletedIds ใน localStorage
                         const pendingStr = localStorage.getItem('sub_pendingIds')
+                        const deletedStr = localStorage.getItem('sub_deletedIds')
                         if (pendingStr) {
                             try {
                                 const ids = JSON.parse(pendingStr)
@@ -1191,6 +1201,15 @@
                                 if (ids.length > 0) {
                                     syncPending = true
                                     console.log(`🔄 Restored ${ids.length} pending order IDs`)
+                                }
+                            } catch (e) { }
+                        }
+                        if (deletedStr) {
+                            try {
+                                const ids = JSON.parse(deletedStr)
+                                ids.forEach(id => deletedIds.add(id))
+                                if (ids.length > 0) {
+                                    console.log(`🗑️ Restored ${ids.length} deleted order IDs`)
                                 }
                             } catch (e) { }
                         }
@@ -1295,6 +1314,8 @@
                                 if (allFound) {
                                     console.log(`✅ Cloud confirmed all ${savePendingIds.size} pending orders. Clearing pending.`)
                                     savePendingIds.clear()
+                                    // Also clear deletedIds since cloud has processed deletions
+                                    deletedIds.clear()
                                     savePendingToLocal()
                                     syncPending = false
                                 } else {
@@ -1336,7 +1357,7 @@
                     saveStorage(); showToast('เพิ่มสินค้าสำเร็จ!')
                 }
 
-                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id != id); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteProduct = (id) => { if (confirm('ต้องการลบสินค้านี้?')) { products.value = products.value.filter(p => p.id != id); deletedIds.add(String(id)); saveStorage(); showToast('ลบสำเร็จ') } }
 
                 const editingProduct = ref(null)
                 const editBom = (product) => { editingProduct.value = JSON.parse(JSON.stringify(product)) }
@@ -1416,7 +1437,7 @@
                     orders.value.unshift(order); saveStorage([order.id]); newOrder.value = { productId: '', qty: 0, subcontractor: '', dueDate: '', bpr: '', lot: '', mfd: '', exp: '' }; calculatedMaterials.value = []; showToast('สร้างใบสั่งจ้างผลิตสำเร็จ!')
                 }
 
-                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id != id); savePendingIds.delete(id); saveStorage(); showToast('ลบสำเร็จ') } }
+                const deleteOrder = (id) => { if (confirm('ต้องการลบ?')) { orders.value = orders.value.filter(o => o.id != id); savePendingIds.delete(id); deletedIds.add(String(id)); saveStorage(); showToast('ลบสำเร็จ') } }
 
                 const editingOrder = ref(null)
                 const editOrder = (order) => { editingOrder.value = JSON.parse(JSON.stringify(order)) }

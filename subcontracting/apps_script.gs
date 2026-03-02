@@ -159,10 +159,22 @@ function syncOrders(ss, orders) {
     }
   })
   
-  // หมายเหตุ: order ที่เหลืออยู่ใน existingMap คือ order ที่ไม่ได้ส่งมา
-  // ❌ ไม่ลบ! เก็บไว้ใน sheet เพื่อป้องกันข้อมูลหาย
+  // ⚡ Cloud-first: ลบ order ที่ไม่ได้ส่งมา (= ถูกลบที่ client แล้ว)
+  // ลบจากล่างขึ้นบน เพื่อไม่ให้ row index เลื่อน
+  var deleted = 0
+  var rowsToDelete = []
+  existingMap.forEach(function(val, id) {
+    rowsToDelete.push(val.rowIndex)
+  })
+  rowsToDelete.sort(function(a, b) { return b - a }) // descending
+  rowsToDelete.forEach(function(rowIdx) {
+    try {
+      sheet.deleteRow(rowIdx)
+      deleted++
+    } catch(e) {}
+  })
 
-  return jsonResponse({ success: true, message: 'Orders synced: updated=' + updated + ', inserted=' + inserted + ', shipments_preserved=' + skipped })
+  return jsonResponse({ success: true, message: 'Orders synced: updated=' + updated + ', inserted=' + inserted + ', deleted=' + deleted + ', shipments_preserved=' + skipped })
 }
 
 function syncDeliveryPlans(ss, orders) {
