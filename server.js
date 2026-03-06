@@ -569,12 +569,427 @@ app.put('/api/ppb', async (req, res) => {
 });
 
 // ══════════════════════════════════════════════
+//  RECEIVING RECORDS API + AUTO-SYNC
+//  ข้อมูลรับเข้า: User บันทึกผ่าน Apps Script → Sheet
+//  Server ดึง Sheet → DB อัตโนมัติ ทุก 5 นาที
+//  Frontend อ่านจาก DB เท่านั้น (เร็วมาก)
+// ══════════════════════════════════════════════
+
+const RECEIVING_SHEET_ID = process.env.RECEIVING_SHEET_ID || '1PTXUxu_vJW7EXEp5k11W-bgogDAYY5tSGl2YhYRvuv4';
+const RECEIVING_SHEET_GID = process.env.RECEIVING_SHEET_GID || '0';
+const RECEIVING_SYNC_INTERVAL = parseInt(process.env.RECEIVING_SYNC_INTERVAL || '300000'); // 5 min default
+let lastReceivingSyncTime = null;
+let receivingSyncInProgress = false;
+
+// ── Helper: Detect vendor from remark ──
+function detectVendor(remark) {
+  if (!remark) return null;
+  const lower = remark.toLowerCase();
+  if (lower.includes('จูน') || lower.includes('jun')) return 'จูน';
+  if (lower.includes('cmi') || lower.includes('ซีเอ็มไอ')) return 'CMI';
+  if (lower.includes('บางปู') || lower.includes('bangpu')) return 'บางปู';
+  return null;
+}
+
+// ── Helper: Parse Thai date ──
+function parseThaiDate(dateStr) {
+  if (!dateStr || !dateStr.trim()) return null;
+  const s = dateStr.trim();
+
+  // d/m/yyyy or d/m/yy
+  const slashMatch = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (slashMatch) {
+    let d = parseInt(slashMatch[1]);
+    let m = parseInt(slashMatch[2]) - 1;
+    let y = parseInt(slashMatch[3]);
+    if (y > 2400) y -= 543;
+    else if (y < 100) y += 2000;
+    const date = new Date(y, m, d);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  // Thai month names
+  const thaiMonths = {
+    'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5,
+    'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.': 8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11,
+    'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4,
+    'มิถุนายน': 5, 'กรกฎาคม': 6, 'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9,
+    'พฤศจิกายน': 10, 'ธันวาคม': 11,
+  };
+  for (const [thName, thMonth] of Object.entries(thaiMonths)) {
+    if (s.includes(thName)) {
+      const nums = s.match(/\d+/g);
+      if (nums && nums.length >= 2) {
+        let day = parseInt(nums[0]);
+        let year = parseInt(nums[nums.length - 1]);
+        if (year > 2400) year -= 543;
+        else if (year < 100) year += 2000;
+        const date = new Date(year, thMonth, day);
+        if (!isNaN(date.getTime())) return date;
+      }
+      break;
+    }
+  }
+
+  // Standard Date parse
+  const parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) return parsed;
+  return null;
+}
+
+// ── Download Google Sheet data (server-side) ──
+// ลองหลายวิธี: gviz CSV → pub CSV → export CSV
+function downloadSheetData() {
+  const urls = [
+    `https://docs.google.com/spreadsheets/d/${RECEIVING_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${RECEIVING_SHEET_GID}`,
+    `https://docs.google.com/spreadsheets/d/e/${RECEIVING_SHEET_ID}/pub?output=csv&gid=${RECEIVING_SHEET_GID}`,
+    `https://docs.google.com/spreadsheets/d/${RECEIVING_SHEET_ID}/export?format=csv&gid=${RECEIVING_SHEET_GID}`,
+  ];
+
+  function tryUrl(url) {
+    return new Promise((resolve, reject) => {
+      let redirects = 0;
+      const maxRedirects = 5;
+      const timeout = setTimeout(() => reject(new Error('Timeout 15s')), 15000);
+
+      const get = (reqUrl) => {
+        https.get(reqUrl, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            redirects++;
+            if (redirects > maxRedirects) { clearTimeout(timeout); reject(new Error('Too many redirects')); return; }
+            get(res.headers.location);
+            return;
+          }
+          if (res.statusCode !== 200) {
+            clearTimeout(timeout);
+            reject(new Error(`HTTP ${res.statusCode}`));
+            return;
+          }
+          let data = '';
+          res.setEncoding('utf8');
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => { clearTimeout(timeout); resolve(data); });
+          res.on('error', (err) => { clearTimeout(timeout); reject(err); });
+        }).on('error', (err) => { clearTimeout(timeout); reject(err); });
+      };
+      get(url);
+    });
+  }
+
+  // ลองทีละ URL จนกว่าจะสำเร็จ
+  return (async () => {
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        console.log(`  📥 Trying URL format ${i + 1}/${urls.length}...`);
+        const data = await tryUrl(urls[i]);
+        if (data && data.length > 50) {
+          console.log(`  ✅ Got ${data.length} bytes from format ${i + 1}`);
+          return data;
+        }
+      } catch (err) {
+        console.log(`  ⚠️ Format ${i + 1} failed: ${err.message}`);
+      }
+    }
+    throw new Error('All Google Sheet download methods failed');
+  })();
+}
+
+// ── Parse CSV ──
+function parseCSV(csvText) {
+  const rows = [];
+  let currentRow = [];
+  let currentField = '';
+  let inQuotes = false;
+  for (let i = 0; i < csvText.length; i++) {
+    const ch = csvText[i];
+    const next = csvText[i + 1];
+    if (inQuotes) {
+      if (ch === '"' && next === '"') { currentField += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { currentField += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { currentRow.push(currentField); currentField = ''; }
+      else if (ch === '\r') { /* skip */ }
+      else if (ch === '\n') {
+        currentRow.push(currentField);
+        if (currentRow.some(f => f.trim() !== '')) rows.push(currentRow);
+        currentRow = []; currentField = '';
+      } else { currentField += ch; }
+    }
+  }
+  if (currentField || currentRow.length > 0) {
+    currentRow.push(currentField);
+    if (currentRow.some(f => f.trim() !== '')) rows.push(currentRow);
+  }
+  return rows;
+}
+
+// ══════════════════════════════════════════════
+//  SYNC: Google Sheet → DB (receiving_records)
+// ══════════════════════════════════════════════
+async function syncReceivingFromSheet() {
+  if (receivingSyncInProgress) {
+    console.log('⏳ Receiving sync already in progress, skipping...');
+    return { success: false, reason: 'in_progress' };
+  }
+  receivingSyncInProgress = true;
+  const startTime = Date.now();
+
+  try {
+    console.log('🔄 Syncing receiving data from Google Sheet...');
+    const csvText = await downloadSheetData();
+    const rows = parseCSV(csvText);
+
+    if (rows.length < 2) {
+      console.log('⚠️ No receiving data found in sheet');
+      return { success: true, count: 0 };
+    }
+
+    const headers = rows[0];
+    const h = {};
+    headers.forEach((name, idx) => { h[name.trim()] = idx; });
+
+    const dateIdx = 0;
+    const productIdx = h['ชื่อสินค้า'];
+    const boxesIdx = h['ผลรวม(ลัง)'];
+    const fractionsIdx = h['ผลรวม(เศษ)'];
+    const remarkIdx = h['หมายเหตุ'];
+
+    if (productIdx === undefined) {
+      console.warn('⚠️ Column "ชื่อสินค้า" not found in sheet');
+      return { success: false, reason: 'missing_column' };
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM receiving_records');
+
+      // Prepare all records first
+      const records = [];
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const productName = (row[productIdx] || '').trim();
+        if (!productName) continue;
+
+        const dateStr = (row[dateIdx] || '').trim();
+        const recordDate = parseThaiDate(dateStr);
+        const totalBoxes = parseInt(row[boxesIdx]) || 0;
+        const totalFractions = parseInt(row[fractionsIdx]) || 0;
+        const remark = (remarkIdx !== undefined ? (row[remarkIdx] || '') : '').trim();
+        const vendor = detectVendor(remark);
+
+        records.push([
+          recordDate ? recordDate.toISOString().split('T')[0] : null,
+          productName, totalBoxes, totalFractions, remark, vendor
+        ]);
+      }
+
+      // Batch insert (200 rows per batch for speed)
+      const BATCH_SIZE = 200;
+      for (let b = 0; b < records.length; b += BATCH_SIZE) {
+        const batch = records.slice(b, b + BATCH_SIZE);
+        const values = [];
+        const params = [];
+        batch.forEach((rec, idx) => {
+          const offset = idx * 6;
+          values.push(`($${offset + 1},$${offset + 2},$${offset + 3},$${offset + 4},$${offset + 5},$${offset + 6})`);
+          params.push(...rec);
+        });
+        await client.query(
+          `INSERT INTO receiving_records (record_date, product_name, total_boxes, total_fractions, remark, vendor) VALUES ${values.join(',')}`,
+          params
+        );
+        if (b % 1000 === 0 && b > 0) console.log(`  📊 Inserted ${b}/${records.length}...`);
+      }
+
+      await client.query('COMMIT');
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      lastReceivingSyncTime = new Date().toISOString();
+      console.log(`✅ Receiving sync done: ${records.length} records in ${elapsed}s`);
+      return { success: true, count: records.length, elapsed, syncTime: lastReceivingSyncTime };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('❌ Receiving sync error:', err.message);
+    return { success: false, error: err.message };
+  } finally {
+    receivingSyncInProgress = false;
+  }
+}
+
+// GET /api/receiving — ดึงรายการรับเข้าทั้งหมด
+app.get('/api/receiving', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM receiving_records ORDER BY record_date DESC, id DESC');
+    res.json({ success: true, records: result.rows, lastSync: lastReceivingSyncTime });
+  } catch (err) {
+    console.error('GET /api/receiving error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/receiving/summary — สรุปยอดตาม vendor/product (สำหรับ Sheet Modal)
+app.get('/api/receiving/summary', async (req, res) => {
+  try {
+    const { dateFrom, dateTo, vendor } = req.query;
+    let whereClause = 'WHERE vendor IS NOT NULL';
+    const params = [];
+
+    if (dateFrom) {
+      params.push(dateFrom);
+      whereClause += ` AND record_date >= $${params.length}`;
+    }
+    if (dateTo) {
+      params.push(dateTo);
+      whereClause += ` AND record_date <= $${params.length}`;
+    }
+    if (vendor && vendor !== 'all') {
+      params.push(vendor);
+      whereClause += ` AND vendor = $${params.length}`;
+    }
+
+    const result = await query(
+      `SELECT product_name, vendor,
+              SUM(total_boxes) as total_boxes,
+              SUM(total_fractions) as total_fractions,
+              COUNT(*) as count
+       FROM receiving_records
+       ${whereClause}
+       GROUP BY product_name, vendor
+       ORDER BY vendor, total_boxes DESC`,
+      params
+    );
+
+    // Also get summary totals by vendor
+    const vendorTotals = await query(
+      `SELECT vendor,
+              SUM(total_boxes) as total,
+              COUNT(*) as count
+       FROM receiving_records
+       ${whereClause}
+       GROUP BY vendor`,
+      params
+    );
+
+    const summary = { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } };
+    vendorTotals.rows.forEach(r => {
+      if (r.vendor === 'จูน') { summary.jun = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
+      else if (r.vendor === 'CMI') { summary.cmi = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
+      else if (r.vendor === 'บางปู') { summary.bangpu = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
+    });
+
+    res.json({
+      success: true,
+      data: result.rows.map(r => ({
+        productName: r.product_name,
+        vendor: r.vendor,
+        totalBoxes: parseInt(r.total_boxes) || 0,
+        totalFractions: parseInt(r.total_fractions) || 0,
+        count: parseInt(r.count) || 0,
+      })),
+      summary,
+      lastSync: lastReceivingSyncTime,
+    });
+  } catch (err) {
+    console.error('GET /api/receiving/summary error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/receiving/by-order/:orderNo — ยอดรับเข้าตามเลข JO
+app.get('/api/receiving/by-order/:orderNo', async (req, res) => {
+  try {
+    const orderNo = req.params.orderNo;
+    const result = await query(
+      `SELECT product_name, total_boxes, total_fractions, remark
+       FROM receiving_records
+       WHERE remark LIKE $1`,
+      [`%${orderNo}%`]
+    );
+    res.json({ success: true, records: result.rows });
+  } catch (err) {
+    console.error('GET /api/receiving/by-order error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/receiving/by-orders — ยอดรับเข้าหลาย JO ทีเดียว (batch)
+app.post('/api/receiving/by-orders', async (req, res) => {
+  try {
+    const { orderNos } = req.body; // ["JO-xxx", "JO-yyy"]
+    if (!orderNos || !Array.isArray(orderNos) || orderNos.length === 0) {
+      return res.json({ success: true, data: {} });
+    }
+
+    const result = await query('SELECT product_name, total_boxes, total_fractions, remark FROM receiving_records');
+    const receivedMap = {};
+    for (const orderNo of orderNos) {
+      receivedMap[orderNo] = { rows: [] };
+    }
+    for (const row of result.rows) {
+      const remark = row.remark || '';
+      for (const orderNo of orderNos) {
+        if (remark.includes(orderNo)) {
+          if (!receivedMap[orderNo]) receivedMap[orderNo] = { rows: [] };
+          receivedMap[orderNo].rows.push(row);
+        }
+      }
+    }
+    res.json({ success: true, data: receivedMap });
+  } catch (err) {
+    console.error('POST /api/receiving/by-orders error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/receiving/product-names — รายชื่อสินค้าจากข้อมูลรับเข้า
+app.get('/api/receiving/product-names', async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT DISTINCT product_name FROM receiving_records
+       WHERE product_name IS NOT NULL AND product_name != ''
+       ORDER BY product_name`
+    );
+    res.json({ success: true, names: result.rows.map(r => r.product_name) });
+  } catch (err) {
+    console.error('GET /api/receiving/product-names error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/receiving/sync — trigger manual sync from Sheet → DB
+app.post('/api/receiving/sync', async (req, res) => {
+  try {
+    const result = await syncReceivingFromSheet();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/receiving/sync-status — ดูสถานะ sync
+app.get('/api/receiving/sync-status', async (req, res) => {
+  res.json({
+    success: true,
+    lastSync: lastReceivingSyncTime,
+    inProgress: receivingSyncInProgress,
+    interval: RECEIVING_SYNC_INTERVAL,
+  });
+});
+
+// ══════════════════════════════════════════════
 //  HEALTH CHECK
 // ══════════════════════════════════════════════
 app.get('/api/health', async (req, res) => {
   try {
     const result = await query('SELECT NOW() AS now');
-    res.json({ success: true, time: result.rows[0].now, db: 'connected' });
+    res.json({ success: true, time: result.rows[0].now, db: 'connected', lastReceivingSync: lastReceivingSyncTime });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message, db: 'disconnected' });
   }
@@ -587,9 +1002,41 @@ app.get('/{*path}', (req, res) => {
 
 // ── Start Server ──
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`\n🚀 Subcontracting Server running at http://localhost:${PORT}`);
   console.log(`📦 Database: ${process.env.INVENTORY_DB_NAME || 'inventory_rm_tan'} @ ${process.env.INVENTORY_DB_HOST || 'localhost'}:${process.env.INVENTORY_DB_PORT || '5432'}`);
   console.log(`📋 Sheet sync: ${APPS_SCRIPT_URL ? '✅ Enabled' : '⚠️ Disabled (set APPS_SCRIPT_URL in .env)'}`);
+  console.log(`📥 Receiving Sheet: ${RECEIVING_SHEET_ID} (auto-sync every ${RECEIVING_SYNC_INTERVAL / 1000}s)`);
   console.log(`🌐 Frontend: http://localhost:${PORT}\n`);
+
+  // ── Ensure receiving_records table exists ──
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS receiving_records (
+        id              SERIAL PRIMARY KEY,
+        record_date     DATE,
+        product_name    VARCHAR(255) NOT NULL,
+        total_boxes     INTEGER DEFAULT 0,
+        total_fractions INTEGER DEFAULT 0,
+        remark          TEXT DEFAULT '',
+        vendor          VARCHAR(100),
+        created_at      TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await query('CREATE INDEX IF NOT EXISTS idx_receiving_date ON receiving_records(record_date)');
+    await query('CREATE INDEX IF NOT EXISTS idx_receiving_vendor ON receiving_records(vendor)');
+    await query('CREATE INDEX IF NOT EXISTS idx_receiving_product ON receiving_records(product_name)');
+  } catch (err) {
+    console.warn('⚠️ Could not ensure receiving_records table:', err.message);
+  }
+
+  // ── Initial sync on startup ──
+  console.log('📥 Running initial receiving sync from Google Sheet...');
+  syncReceivingFromSheet().catch(err => console.warn('⚠️ Initial receiving sync failed:', err.message));
+
+  // ── Auto-sync every 5 minutes ──
+  setInterval(() => {
+    syncReceivingFromSheet().catch(err => console.warn('⚠️ Auto receiving sync failed:', err.message));
+  }, RECEIVING_SYNC_INTERVAL);
 });
+

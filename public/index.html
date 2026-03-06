@@ -47,9 +47,9 @@
                         <button @click="forceLoadFromDatabase"
                             class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-200">🔄
                             รีเฟรช</button>
-                        <button @click="showSheetModal = true"
+                        <button @click="showSheetModal = true; fetchReceivingSummary()"
                             class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg">📊
-                            ดูยอดจาก Sheet</button>
+                            ดูยอดรับเข้า</button>
                         <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">●
                             ออนไลน์</span>
                     </div>
@@ -464,9 +464,9 @@
                 <div class="glass rounded-2xl p-6 card-shadow">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-gray-800">📊 ติดตามงานจ้างผลิต</h2>
-                        <button @click="fetchSheetData"
+                        <button @click="triggerReceivingSync"
                             class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg">🔄
-                            อัปเดตจาก Sheet</button>
+                            อัปเดตข้อมูลรับเข้า</button>
                     </div>
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -878,7 +878,7 @@
         <div v-if="showSheetModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto card-shadow">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">📊 สรุปยอดสินค้าจาก Google Sheet</h3>
+                    <h3 class="text-xl font-bold text-gray-800">📊 สรุปยอดรับเข้า (จาก DB)</h3>
                     <button @click="showSheetModal = false"
                         class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
                 </div>
@@ -988,10 +988,10 @@
                     </table>
                 </div>
                 <div class="mt-4 pt-4 border-t flex justify-between items-center">
-                    <p class="text-sm text-gray-500">อัปเดตล่าสุด: {{ sheetLastUpdated || '-' }}</p>
-                    <button @click="fetchSheetData"
+                    <p class="text-sm text-gray-500">Sync ล่าสุด: {{ sheetLastUpdated || '-' }}</p>
+                    <button @click="triggerReceivingSync"
                         class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-xl font-medium">🔄
-                        รีเฟรชข้อมูล</button>
+                        Sync จาก Sheet</button>
                 </div>
             </div>
         </div>
@@ -1038,10 +1038,10 @@
                 const editingMaterials = ref([])
                 const combinedDate = ref(new Date().toISOString().split('T')[0])
 
-                // Sheet Data
+                // Receiving Data (from DB)
                 const sheetFilter = ref('all')
                 const sheetData = ref([])
-                const rawSheetRows = ref([]) // Store raw data for filtering
+                const receivingRecords = ref([]) // All receiving records from DB
                 const sheetSummary = ref({ jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } })
                 const sheetLastUpdated = ref('')
                 const dateFrom = ref('')
@@ -1056,12 +1056,11 @@
                     if (sheetFilter.value === 'all') return sheetData.value
                     return sheetData.value.filter(d => d.vendor === sheetFilter.value)
                 })
-                // Unique product names from Google Sheet
+                // Unique product names from receiving DB data
                 const sheetProductList = computed(() => {
                     const names = new Set()
-                    rawSheetRows.value.forEach(row => {
-                        const name = row['ชื่อสินค้า']
-                        if (name && String(name).trim()) names.add(String(name).trim())
+                    receivingRecords.value.forEach(rec => {
+                        if (rec.product_name && rec.product_name.trim()) names.add(rec.product_name.trim())
                     })
                     return [...names].sort()
                 })
@@ -1532,11 +1531,9 @@
 
                 const forceLoadFromDatabase = async () => {
                     await loadFromSheet()
+                    await loadReceivingRecords(true)
                 }
 
-                // Sheet Configuration (ยังคงใช้ Google Sheet สำหรับดูยอด)
-                const SHEET_ID = '1PTXUxu_vJW7EXEp5k11W-bgogDAYY5tSGl2YhYRvuv4'
-                const SHEET_GID = '0'
                 const sheetLoading = ref(false)
 
                 // === โหลด ชิ้น/ลัง จาก PostgreSQL ===
@@ -1552,17 +1549,32 @@
                     }
                 }
 
-                // === ดึงยอดรับเข้าจาก Sheet (match เลข JO ในหมายเหตุเท่านั้น) ===
+                // === โหลดข้อมูลรับเข้าจาก DB ===
+                const loadReceivingRecords = async (silent) => {
+                    try {
+                        if (!silent) showToast('กำลังโหลดข้อมูลรับเข้า...', 'info')
+                        const res = await fetch(API_BASE + '/receiving').then(r => r.json())
+                        if (res.success) {
+                            receivingRecords.value = res.records || []
+                            if (res.lastSync) sheetLastUpdated.value = new Date(res.lastSync).toLocaleString('th-TH')
+                            if (!silent) showToast('โหลดข้อมูลรับเข้าสำเร็จ! (' + receivingRecords.value.length + ' รายการ)')
+                        }
+                    } catch (err) {
+                        if (!silent) showToast('โหลดข้อมูลรับเข้าล้มเหลว: ' + err.message, 'error')
+                    }
+                }
+
+                // === ดึงยอดรับเข้าจาก DB (match เลข JO ในหมายเหตุเท่านั้น) ===
                 const getReceivedFromSheet = (orderNo) => {
-                    if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return 0
+                    if (!receivingRecords.value || receivingRecords.value.length === 0 || !orderNo) return 0
                     let totalPieces = 0
-                    rawSheetRows.value.forEach(row => {
-                        const remark = String(row['หมายเหตุ'] || '')
+                    receivingRecords.value.forEach(rec => {
+                        const remark = String(rec.remark || '')
                         if (remark.includes(orderNo)) {
-                            const boxes = parseInt(row['ผลรวม(ลัง)']) || 0
-                            const fractions = parseInt(row['ผลรวม(เศษ)']) || 0
-                            const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
-                            const piecesPerBox = piecesPerBoxMap.value[sheetProduct] || 0
+                            const boxes = parseInt(rec.total_boxes) || 0
+                            const fractions = parseInt(rec.total_fractions) || 0
+                            const productName = String(rec.product_name || '').trim()
+                            const piecesPerBox = piecesPerBoxMap.value[productName] || 0
                             totalPieces += (boxes * piecesPerBox) + fractions
                         }
                     })
@@ -1571,237 +1583,66 @@
 
                 // === เตือนถ้าเลข JO ตรง แต่ชื่อสินค้าไม่ตรง ===
                 const getMismatchWarnings = (orderNo, expectedProduct) => {
-                    if (!rawSheetRows.value || rawSheetRows.value.length === 0 || !orderNo) return []
+                    if (!receivingRecords.value || receivingRecords.value.length === 0 || !orderNo) return []
                     const warnings = []
-                    rawSheetRows.value.forEach((row, idx) => {
-                        const remark = String(row['หมายเหตุ'] || '')
+                    receivingRecords.value.forEach((rec, idx) => {
+                        const remark = String(rec.remark || '')
                         if (remark.includes(orderNo)) {
-                            const sheetProduct = String(row['ชื่อสินค้า'] || '').trim()
-                            if (sheetProduct && !sheetProduct.includes(expectedProduct) && !expectedProduct.includes(sheetProduct)) {
-                                warnings.push({ rowNum: idx + 2, sheetProduct, remark })
+                            const recProduct = String(rec.product_name || '').trim()
+                            if (recProduct && !recProduct.includes(expectedProduct) && !expectedProduct.includes(recProduct)) {
+                                warnings.push({ rowNum: idx + 1, sheetProduct: recProduct, remark })
                             }
                         }
                     })
                     return warnings
                 }
 
-                const detectVendor = (remark) => {
-                    if (!remark) return null
-                    const lower = remark.toLowerCase()
-                    if (lower.includes('จูน') || lower.includes('jun')) return 'จูน'
-                    if (lower.includes('cmi') || lower.includes('ซีเอ็มไอ')) return 'CMI'
-                    if (lower.includes('บางปู') || lower.includes('bangpu')) return 'บางปู'
-                    return null
-                }
-
-                const fetchSheetData = async () => {
+                // === ดึงสรุปยอดรับเข้าจาก DB (สำหรับ Sheet Modal) ===
+                const fetchReceivingSummary = async () => {
                     sheetLoading.value = true
                     try {
-                        const callbackName = 'googleSheetCallback_' + Date.now()
-                        const url =
-                            `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${SHEET_GID}`
-
-                        const dataPromise = new Promise((resolve, reject) => {
-                            const timeout = setTimeout(() => { reject(new Error('Request timeout')) }, 15000)
-                            window[callbackName] = (response) => { clearTimeout(timeout); delete window[callbackName]; resolve(response) }
-                        })
-
-                        const script = document.createElement('script')
-                        script.src = url
-                        script.onerror = () => { sheetLoading.value = false; showToast('ไม่สามารถโหลดข้อมูลจาก Google Sheet ได้', 'error') }
-                        document.body.appendChild(script)
-
-                        const response = await dataPromise
-                        document.body.removeChild(script)
-
-                        if (response && response.table) {
-                            const headers = response.table.cols.map((col, idx) => col.label || `col_${idx}`)
-
-
-
-                            const rows = response.table.rows.map(row => {
-                                const obj = {}
-                                row.c.forEach((cell, idx) => {
-                                    const key = headers[idx]
-                                    obj[key] = cell ? (cell.f || cell.v || '') : ''
-                                    // Store raw/formatted based on detected column
-                                    // FORCE: Always use first column (index 0) for Date
-                                    if (idx === 0) {
-                                        obj['_dateRaw'] = cell ? cell.v : null
-                                        obj['_dateFormatted'] = cell ? (cell.f || cell.v) : null
-                                    }
-                                })
-                                return obj
-                            })
-
-                            // Store raw rows
-                            rawSheetRows.value = rows
-                            processDataWithFilter() // Initial process
-
-                            sheetLastUpdated.value = new Date().toLocaleString('th-TH')
-
-                            showToast('โหลดสำเร็จ! ' + rows.length + ' แถว', 'success')
-                        } else {
-                            showToast('ข้อมูลไม่ถูกต้อง', 'error')
+                        let params = ''
+                        if (dateFrom.value) {
+                            // Convert dd/mm/yyyy → yyyy-mm-dd
+                            const p = dateFrom.value.split('/')
+                            if (p.length === 3) { let y = parseInt(p[2]); if (y > 2400) y -= 543; params += 'dateFrom=' + y + '-' + p[1].padStart(2, '0') + '-' + p[0].padStart(2, '0') + '&' }
                         }
-                    } catch (error) {
-                        console.error('Sheet fetch error:', error)
-                        showToast('ไม่สามารถเชื่อมต่อ Google Sheet ได้: ' + error.message, 'error')
+                        if (dateTo.value) {
+                            const p = dateTo.value.split('/')
+                            if (p.length === 3) { let y = parseInt(p[2]); if (y > 2400) y -= 543; params += 'dateTo=' + y + '-' + p[1].padStart(2, '0') + '-' + p[0].padStart(2, '0') + '&' }
+                        }
+                        const res = await fetch(API_BASE + '/receiving/summary?' + params).then(r => r.json())
+                        if (res.success) {
+                            sheetData.value = res.data || []
+                            sheetSummary.value = res.summary || { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } }
+                            if (res.lastSync) sheetLastUpdated.value = new Date(res.lastSync).toLocaleString('th-TH')
+                            showToast('โหลดสรุปยอดสำเร็จ! ' + sheetData.value.length + ' รายการ')
+                        }
+                    } catch (err) {
+                        showToast('โหลดสรุปยอดล้มเหลว: ' + err.message, 'error')
                     }
                     sheetLoading.value = false
                 }
 
-                const processDataWithFilter = () => {
-                    const summary = {}
-                    // Parse dd/mm/yyyy format
-                    const parseDMY = (s) => {
-                        if (!s) return null; const p = s.split('/'); if (p.length !== 3) return null; return new
-                            Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]))
-                    }
-                    const startDate = parseDMY(dateFrom.value)
-                    const endDate = (() => { const d = parseDMY(dateTo.value); if (d) d.setHours(23, 59, 59); return d })()
-
-                    let debugShown = false
-                    let totalRows = 0
-                    let matchedRows = 0
-                    let invalidDateRows = 0
-
-                    rawSheetRows.value.forEach(row => {
-                        totalRows++
-                        let rowDate = null
-                        const rawVal = row._dateRaw
-                        const fmtVal = row._dateFormatted
-
-                        // === PARSE DATE FROM RAW VALUE ===
-                        // Case 1: Google Viz Date object - "Date(y,m,d)" — year may be in Buddhist Era!
-                        if (rawVal && typeof rawVal === 'string') {
-                            const vizMatch = String(rawVal).match(/Date\((\d+),(\d+),(\d+)\)/)
-                            if (vizMatch) {
-                                let vy = parseInt(vizMatch[1])
-                                let vm = parseInt(vizMatch[2])
-                                let vd = parseInt(vizMatch[3])
-                                if (vy > 2400) vy -= 543 // Convert BE to AD
-                                rowDate = new Date(vy, vm, vd)
-                            }
+                // === Trigger manual sync from Sheet → DB ===
+                const triggerReceivingSync = async () => {
+                    showToast('กำลัง sync ข้อมูลจาก Sheet → DB...', 'info')
+                    try {
+                        const res = await fetch(API_BASE + '/receiving/sync', { method: 'POST' }).then(r => r.json())
+                        if (res.success) {
+                            showToast('Sync สำเร็จ! ' + (res.count || 0) + ' รายการ (' + (res.elapsed || '?') + 's)')
+                            await loadReceivingRecords(true)
+                            await fetchReceivingSummary()
+                        } else {
+                            showToast('Sync ล้มเหลว: ' + (res.error || res.reason || 'unknown'), 'error')
                         }
-
-                        // Case 2: rawVal is already a Date-like string (ISO format)
-                        if (!rowDate && rawVal && typeof rawVal === 'string' && !isNaN(new Date(rawVal).getTime())) {
-                            rowDate = new Date(rawVal)
-                        }
-
-                        // === PARSE DATE FROM FORMATTED VALUE ===
-                        if (!rowDate && fmtVal) {
-                            const dateStr = String(fmtVal).trim()
-
-                            // Case 3: Thai short month "6 ก.พ. 2569"
-                            const thaiShort = {
-                                'ม.ค.': 0, 'ก.พ.': 1, 'มี.ค.': 2, 'เม.ย.': 3, 'พ.ค.': 4, 'มิ.ย.': 5, 'ก.ค.': 6, 'ส.ค.': 7, 'ก.ย.':
-                                    8, 'ต.ค.': 9, 'พ.ย.': 10, 'ธ.ค.': 11
-                            }
-                            const thaiLong = {
-                                'มกราคม': 0, 'กุมภาพันธ์': 1, 'มีนาคม': 2, 'เมษายน': 3, 'พฤษภาคม': 4, 'มิถุนายน': 5, 'กรกฎาคม': 6,
-                                'สิงหาคม': 7, 'กันยายน': 8, 'ตุลาคม': 9, 'พฤศจิกายน': 10, 'ธันวาคม': 11
-                            }
-                            const allThaiMonths = { ...thaiShort, ...thaiLong }
-
-                            for (const [thName, thMonth] of Object.entries(allThaiMonths)) {
-                                if (dateStr.includes(thName)) {
-                                    // Extract numbers from string
-                                    const nums = dateStr.match(/\d+/g)
-                                    if (nums && nums.length >= 2) {
-                                        let day = parseInt(nums[0])
-                                        let year = parseInt(nums[nums.length - 1])
-                                        if (year > 2400) year -= 543
-                                        else if (year < 100) year += 2000
-                                        rowDate = new Date(year, thMonth, day)
-                                    }
-                                    break
-                                }
-                            }
-                            // Case 4: d/m/yyyy or d/m/yy format
-                            if (!rowDate) {
-                                const slashMatch = dateStr.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
-                                if (slashMatch) {
-                                    let d = parseInt(slashMatch[1])
-                                    let m = parseInt(slashMatch[2]) - 1
-                                    let y = parseInt(slashMatch[3])
-                                    if (y > 2400) y -= 543
-                                    else if (y < 100) y += 2000
-                                    rowDate = new Date(y, m, d)
-                                }
-                            }
-                            // Case 5: Standard JS Date parse as last resort
-                            if (!rowDate) {
-                                const parsed = new Date(dateStr)
-                                if (!isNaN(parsed.getTime())) rowDate = parsed
-                            }
-                        }
-                        // === DEBUG: Show first row data (only once) ===
-                        if (!debugShown) {
-                            debugShown = true
-                            console.log('=== SHEET DEBUG ===')
-                            console.log('Raw Value (cell.v):', rawVal, typeof rawVal)
-                            console.log('Formatted Value (cell.f):', fmtVal, typeof fmtVal)
-                            console.log('Parsed Date:', rowDate)
-                            console.log('All keys:', Object.keys(row))
-                        }
-                        // === DATE FILTERING ===
-                        if (startDate || endDate) {
-                            if (rowDate && !isNaN(rowDate.getTime())) {
-                                if (startDate && rowDate < startDate) return
-                                if (endDate && rowDate > endDate) return
-                            }
-                        }
-
-                        // === VENDOR & PRODUCT SUMMARIZATION ===
-                        const remark = row['หมายเหตุ'] || ''
-                        const vendor = detectVendor(remark)
-                        if (vendor) {
-                            matchedRows++
-                            const productName = row['ชื่อสินค้า'] || 'ไม่ระบุ'
-                            const totalBoxes = parseInt(row['ผลรวม(ลัง)']) || 0
-                            const totalFractions = parseInt(row['ผลรวม(เศษ)']) || 0
-                            const key = `${productName}_${vendor}`
-                            if (!summary[key]) {
-                                summary[key] = { productName, vendor, totalBoxes: 0, totalFractions: 0, count: 0 }
-                            }
-                            summary[key].totalBoxes += totalBoxes
-                            summary[key].totalFractions += totalFractions
-                            summary[key].count += 1
-                        }
-                    })
-
-                    sheetData.value = Object.values(summary).sort((a, b) => {
-                        if (a.vendor !== b.vendor) return a.vendor.localeCompare(b.vendor)
-                        return b.totalBoxes - a.totalBoxes
-                    })
-
-                    // Update summary totals
-                    const summaryTotals = {
-                        jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }
-                    }
-                    sheetData.value.forEach(item => {
-                        if (item.vendor === 'จูน') { summaryTotals.jun.total += item.totalBoxes; summaryTotals.jun.count += item.count }
-                        else if (item.vendor === 'CMI') {
-                            summaryTotals.cmi.total += item.totalBoxes; summaryTotals.cmi.count +=
-                                item.count
-                        }
-                        else if (item.vendor === 'บางปู') {
-                            summaryTotals.bangpu.total += item.totalBoxes; summaryTotals.bangpu.count +=
-                                item.count
-                        }
-                    })
-                    sheetSummary.value = summaryTotals
-
-                    // Show filter result info
-                    if (startDate || endDate) {
-                        showToast(`กรองวันที่: พบ ${matchedRows} รายการ จากทั้งหมด ${totalRows} แถว`, 'info')
+                    } catch (err) {
+                        showToast('Sync ล้มเหลว: ' + err.message, 'error')
                     }
                 }
 
                 const applyDateFilter = () => {
-                    processDataWithFilter()
+                    fetchReceivingSummary()
                 }
 
                 // Helper: format Date to dd/mm/yyyy
@@ -1857,9 +1698,13 @@
                     console.log('🚀 Starting app — loading from PostgreSQL...')
                     await fetchPiecesPerBox()
                     await loadFromSheet(true)
-                    // ไม่โหลด Google Sheet อัตโนมัติ — กดปุ่ม "ดูยอดจาก Sheet" เพื่อดู
-                    // Auto-refresh DB ทุก 2 นาที (DB เร็ว ไม่ต้องรอ)
-                    setInterval(() => { loadFromSheet(true) }, 120000)
+                    await loadReceivingRecords(true) // โหลดข้อมูลรับเข้าจาก DB อัตโนมัติ
+                    console.log('✅ All data loaded from DB')
+                    // Auto-refresh ทุก 2 นาที
+                    setInterval(() => {
+                        loadFromSheet(true)
+                        loadReceivingRecords(true)
+                    }, 120000)
                 })
 
                 return {
@@ -1874,8 +1719,8 @@
                     recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
                     editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
                     openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
-                    getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchSheetData, applyDateFilter, setQuickDate,
-                    getPiecesPerBox, setPiecesPerBox, calculateTotalPieces
+                    getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchReceivingSummary, triggerReceivingSync, applyDateFilter, setQuickDate,
+                    getPiecesPerBox, setPiecesPerBox, calculateTotalPieces, loadReceivingRecords
                 }
             }
         }).mount('#app')
