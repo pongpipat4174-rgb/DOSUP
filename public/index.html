@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 
 <head>
@@ -896,6 +896,9 @@
                     <button @click="sheetFilter = 'บางปู'"
                         :class="sheetFilter === 'บางปู' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'"
                         class="px-4 py-2 rounded-lg font-medium">🏭 บางปู</button>
+                    <button @click="sheetFilter = 'อื่นๆ'"
+                        :class="sheetFilter === 'อื่นๆ' ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700'"
+                        class="px-4 py-2 rounded-lg font-medium">📦 อื่นๆ</button>
                 </div>
                 <!-- Date Range Filter -->
                 <div
@@ -922,7 +925,7 @@
                     </div>
                 </div>
                 <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl p-4 text-white">
                         <p class="text-sm opacity-80">🏭 จูน</p>
                         <p class="text-2xl font-bold">{{ sheetSummary.jun?.total || 0 }} ลัง</p>
@@ -937,6 +940,11 @@
                         <p class="text-sm opacity-80">🏭 บางปู</p>
                         <p class="text-2xl font-bold">{{ sheetSummary.bangpu?.total || 0 }} ลัง</p>
                         <p class="text-sm opacity-80">{{ sheetSummary.bangpu?.count || 0 }} รายการ</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-gray-500 to-gray-700 rounded-xl p-4 text-white">
+                        <p class="text-sm opacity-80">📦 อื่นๆ</p>
+                        <p class="text-2xl font-bold">{{ sheetSummary.other?.total || 0 }} ลัง</p>
+                        <p class="text-sm opacity-80">{{ sheetSummary.other?.count || 0 }} รายการ</p>
                     </div>
                 </div>
                 <!-- Data Table -->
@@ -977,7 +985,7 @@
                                 <td class="px-4 py-3 text-center text-gray-600">{{ item.count }}</td>
                                 <td class="px-4 py-3">
                                     <span
-                                        :class="{'bg-pink-100 text-pink-700': item.vendor === 'จูน', 'bg-blue-100 text-blue-700': item.vendor === 'CMI', 'bg-green-100 text-green-700': item.vendor === 'บางปู'}"
+                                        :class="{'bg-pink-100 text-pink-700': item.vendor === 'จูน', 'bg-blue-100 text-blue-700': item.vendor === 'CMI', 'bg-green-100 text-green-700': item.vendor === 'บางปู', 'bg-gray-100 text-gray-700': item.vendor === 'อื่นๆ'}"
                                         class="px-2 py-1 rounded-full text-sm font-medium">{{ item.vendor }}</span>
                                 </td>
                             </tr>
@@ -1042,7 +1050,7 @@
                 const sheetFilter = ref('all')
                 const sheetData = ref([])
                 const receivingRecords = ref([]) // All receiving records from DB
-                const sheetSummary = ref({ jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } })
+                const sheetSummary = ref({ jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }, other: { total: 0, count: 0 }, all: { total: 0, count: 0 } })
                 const sheetLastUpdated = ref('')
                 const dateFrom = ref('')
                 const dateTo = ref('')
@@ -1614,7 +1622,7 @@
                         const res = await fetch(API_BASE + '/receiving/summary?' + params).then(r => r.json())
                         if (res.success) {
                             sheetData.value = res.data || []
-                            sheetSummary.value = res.summary || { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } }
+                            sheetSummary.value = res.summary || { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }, other: { total: 0, count: 0 }, all: { total: 0, count: 0 } }
                             if (res.lastSync) sheetLastUpdated.value = new Date(res.lastSync).toLocaleString('th-TH')
                             showToast('โหลดสรุปยอดสำเร็จ! ' + sheetData.value.length + ' รายการ')
                         }

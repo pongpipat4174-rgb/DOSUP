@@ -838,7 +838,7 @@ app.get('/api/receiving', async (req, res) => {
 app.get('/api/receiving/summary', async (req, res) => {
   try {
     const { dateFrom, dateTo, vendor } = req.query;
-    let whereClause = 'WHERE vendor IS NOT NULL';
+    let whereClause = 'WHERE 1=1';
     const params = [];
 
     if (dateFrom) {
@@ -855,33 +855,38 @@ app.get('/api/receiving/summary', async (req, res) => {
     }
 
     const result = await query(
-      `SELECT product_name, vendor,
+      `SELECT product_name, COALESCE(vendor, 'อื่นๆ') as vendor,
               SUM(total_boxes) as total_boxes,
               SUM(total_fractions) as total_fractions,
               COUNT(*) as count
        FROM receiving_records
        ${whereClause}
-       GROUP BY product_name, vendor
+       GROUP BY product_name, COALESCE(vendor, 'อื่นๆ')
        ORDER BY vendor, total_boxes DESC`,
       params
     );
 
     // Also get summary totals by vendor
     const vendorTotals = await query(
-      `SELECT vendor,
+      `SELECT COALESCE(vendor, 'อื่นๆ') as vendor,
               SUM(total_boxes) as total,
               COUNT(*) as count
        FROM receiving_records
        ${whereClause}
-       GROUP BY vendor`,
+       GROUP BY COALESCE(vendor, 'อื่นๆ')`,
       params
     );
 
-    const summary = { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 } };
+    const summary = { jun: { total: 0, count: 0 }, cmi: { total: 0, count: 0 }, bangpu: { total: 0, count: 0 }, other: { total: 0, count: 0 }, all: { total: 0, count: 0 } };
     vendorTotals.rows.forEach(r => {
-      if (r.vendor === 'จูน') { summary.jun = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
-      else if (r.vendor === 'CMI') { summary.cmi = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
-      else if (r.vendor === 'บางปู') { summary.bangpu = { total: parseInt(r.total) || 0, count: parseInt(r.count) || 0 }; }
+      const total = parseInt(r.total) || 0;
+      const count = parseInt(r.count) || 0;
+      summary.all.total += total;
+      summary.all.count += count;
+      if (r.vendor === 'จูน') { summary.jun = { total, count }; }
+      else if (r.vendor === 'CMI') { summary.cmi = { total, count }; }
+      else if (r.vendor === 'บางปู') { summary.bangpu = { total, count }; }
+      else { summary.other.total += total; summary.other.count += count; }
     });
 
     res.json({
