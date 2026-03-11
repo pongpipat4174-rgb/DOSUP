@@ -914,12 +914,10 @@
                     <div class="flex gap-2">
                         <button @click="setQuickDate('today')"
                             class="px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium">วันนี้</button>
-                        <button @click="setQuickDate('week')"
-                            class="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 font-medium">7
-                            วัน</button>
-                        <button @click="setQuickDate('month')"
-                            class="px-3 py-1.5 text-xs bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 font-medium">30
-                            วัน</button>
+                        <button @click="setQuickDate('thisMonth')"
+                            class="px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 font-medium">เดือนนี้</button>
+                        <button @click="setQuickDate('lastMonth')"
+                            class="px-3 py-1.5 text-xs bg-teal-100 text-teal-700 rounded-lg hover:bg-teal-200 font-medium">เดือนที่แล้ว</button>
                         <button @click="setQuickDate('all')"
                             class="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">ทั้งหมด</button>
                     </div>
@@ -1661,15 +1659,18 @@
 
                 const setQuickDate = (range) => {
                     const today = new Date()
-                    dateTo.value = toDMY(today)
                     if (range === 'today') {
                         dateFrom.value = toDMY(today)
-                    } else if (range === 'week') {
-                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-                        dateFrom.value = toDMY(weekAgo)
-                    } else if (range === 'month') {
-                        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-                        dateFrom.value = toDMY(monthAgo)
+                        dateTo.value = toDMY(today)
+                    } else if (range === 'thisMonth') {
+                        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+                        dateFrom.value = toDMY(firstDay)
+                        dateTo.value = toDMY(today)
+                    } else if (range === 'lastMonth') {
+                        const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+                        const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+                        dateFrom.value = toDMY(firstDayLastMonth)
+                        dateTo.value = toDMY(lastDayLastMonth)
                     } else {
                         dateFrom.value = ''
                         dateTo.value = ''

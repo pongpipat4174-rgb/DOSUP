@@ -781,7 +781,7 @@ async function syncReceivingFromSheet() {
         const vendor = detectVendor(remark);
 
         records.push([
-          recordDate ? recordDate.toISOString().split('T')[0] : null,
+          recordDate ? `${recordDate.getFullYear()}-${String(recordDate.getMonth()+1).padStart(2,'0')}-${String(recordDate.getDate()).padStart(2,'0')}` : null,
           productName, totalBoxes, totalFractions, remark, vendor
         ]);
       }
