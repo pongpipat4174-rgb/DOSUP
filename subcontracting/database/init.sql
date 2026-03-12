@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS shipment_materials (
     material_name   VARCHAR(255) NOT NULL,
     send_qty        NUMERIC(15, 4) DEFAULT 0,
     unit            VARCHAR(50),
+    remark          TEXT DEFAULT '',
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 

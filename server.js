@@ -391,8 +391,8 @@ app.post('/api/orders', async (req, res) => {
         if (s.materials && Array.isArray(s.materials)) {
           for (const sm of s.materials) {
             await client.query(
-              'INSERT INTO shipment_materials (shipment_id, material_name, send_qty, unit) VALUES ($1,$2,$3,$4)',
-              [shipmentId, sm.name, sm.sendQty || 0, sm.unit || '']
+              'INSERT INTO shipment_materials (shipment_id, material_name, send_qty, unit, remark) VALUES ($1,$2,$3,$4,$5)',
+              [shipmentId, sm.name, sm.sendQty || 0, sm.unit || '', sm.remark || '']
             );
           }
         }
@@ -460,8 +460,8 @@ app.put('/api/orders/:id', async (req, res) => {
         if (s.materials && Array.isArray(s.materials)) {
           for (const sm of s.materials) {
             await client.query(
-              'INSERT INTO shipment_materials (shipment_id, material_name, send_qty, unit) VALUES ($1,$2,$3,$4)',
-              [shipmentId, sm.name, sm.sendQty || 0, sm.unit || '']
+              'INSERT INTO shipment_materials (shipment_id, material_name, send_qty, unit, remark) VALUES ($1,$2,$3,$4,$5)',
+              [shipmentId, sm.name, sm.sendQty || 0, sm.unit || '', sm.remark || '']
             );
           }
         }
