@@ -684,6 +684,9 @@
                                     <button @click="printDeliveryRound(selectedShipmentOrder, idx)"
                                         class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded hover:bg-blue-200">🖨️
                                         พิมพ์</button>
+                                    <button @click="deleteShipmentRound(idx)"
+                                        class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded hover:bg-red-200">🗑️
+                                        ลบ</button>
                                 </div>
                             </div>
                             <!-- View mode -->
@@ -1422,6 +1425,20 @@
                     }
                     editingRoundIdx.value = -1
                 }
+                const deleteShipmentRound = (idx) => {
+                    const order = orders.value.find(o => o.id === selectedShipmentOrder.value.id)
+                    if (!order || !order.shipments || !order.shipments[idx]) return
+                    const roundNo = idx + 1
+                    if (!confirm('ต้องการลบรอบที่ ' + roundNo + ' ? ข้อมูลวัตถุดิบที่ส่งในรอบนี้จะหายไป')) return
+                    order.shipments.splice(idx, 1)
+                    // Re-number remaining rounds
+                    order.shipments.forEach((s, i) => { s.round = i + 1 })
+                    saveStorage([order.id])
+                    selectedShipmentOrder.value = { ...order }
+                    recalcShipMaterials()
+                    editingRoundIdx.value = -1
+                    showToast('🗑️ ลบรอบที่ ' + roundNo + ' สำเร็จ!')
+                }
                 const printDeliveryRound = (order, roundIdx) => {
                     const ship = order.shipments[roundIdx]
                     if (!ship) return
@@ -1726,7 +1743,7 @@
                     showToast, generateOrderNo, formatDate, addProduct, deleteProduct, editBom, saveEditBom, editingProduct, addMaterialToBom, selectSheetProduct,
                     addBomRow, saveBomMaterials, dupBom, calculateMaterials, createJobOrder, deleteOrder, editingOrder, editOrder, saveEditOrder, closeOrder, closeOrderDirect, reopenOrder, openShipmentModal,
                     recalcShipMaterials, getTotalShipped, getRemainingToShip, getNextShipmentRound, getMatShipStatus, getMatSummary,
-                    editShipmentRound, saveShipmentEdit, printDeliveryRound, printCombinedDelivery, confirmShipment,
+                    editShipmentRound, saveShipmentEdit, deleteShipmentRound, printDeliveryRound, printCombinedDelivery, confirmShipment,
                     openOrderDetail, openReceiveModal, closeReceiveModal, confirmReceive, openDeliveryNote, loadFromSheet,
                     getReceivedFromSheet, getMismatchWarnings, forceLoadFromDatabase, fetchReceivingSummary, triggerReceivingSync, applyDateFilter, setQuickDate,
                     getPiecesPerBox, setPiecesPerBox, calculateTotalPieces, loadReceivingRecords
